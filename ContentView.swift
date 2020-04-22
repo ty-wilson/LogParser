@@ -21,7 +21,7 @@ struct ContentView: View {
     @EnvironmentObject var data: Data
     @State private var pageNum: Int = 0
     @State public var pageSize = 0
-    @State private var filter = Filter(
+    @State public var filter = Filter(
         showErrors: true,
         showWarns: false,
         startingDate: Date())
@@ -36,7 +36,7 @@ struct ContentView: View {
                 loadingView(data, filter: $filter)
             } else {
                 HStack {
-                    //Select date and reload
+                    //Date picker and reload button
                     datePickerView(filter: $filter).environmentObject(data)
                     
                     //Reloading status
@@ -63,8 +63,9 @@ struct ContentView: View {
                 //Log View
                 if(data.hasPage(pageNum, pageSize: pageSize, filter: filter))
                 {
-                    LogView(page: data.getPage(pageNum, pageSize: pageSize, filter: filter)!, window: window, pageSize: $pageSize)
+                    LogView(filter: filter, page: data.getPage(pageNum, pageSize: pageSize, filter: filter)!, window: window, pageSize: $pageSize)
                         .background(Color.primaryColor)
+                        .environmentObject(data)
                 } else {
                     Spacer()
                     Text("No results on this page")
@@ -72,6 +73,9 @@ struct ContentView: View {
                             let newPage = self.data.getLastPage(pageSize: self.pageSize, filter: self.filter)
                             print("Resetting to \(newPage)")
                             self.pageNum = newPage
+                            
+                            //Save filter for resize event
+                            self.data.savedFilter = self.filter
                         }
                     Spacer()
                 }

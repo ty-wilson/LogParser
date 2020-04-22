@@ -40,7 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }*/
     
     func windowDidEndLiveResize(_ notification: Notification) {
-        let contentView = ContentView(window: window!, firstLoad: false).environmentObject(data)
+        let contentView = ContentView(filter: data.savedFilter, window: window!, firstLoad: false).environmentObject(data)
         window.contentView = NSHostingView(rootView: contentView)
     }
     

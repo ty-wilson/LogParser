@@ -98,9 +98,13 @@ final class Data: ObservableObject {
     
     public var loadingDatesData: LoadingDatesData
     
+    public var savedFilter = Filter(
+                showErrors: true,
+                showWarns: false,
+                startingDate: Date())
+    
     @Published var status: Status = .waiting
     @Published var message: String?
-    @Published var resized = 0
     
     enum Status: String {
         case waiting

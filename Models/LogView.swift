@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct LogView: View {
+    @EnvironmentObject var data: Data
+    var filter: Filter
     var page: [Log]
     let window: NSWindow
     @Binding var pageSize: Int
@@ -30,6 +32,9 @@ struct LogView: View {
                 .onAppear(){
                     print("LogView appeared, sizing: " + String(Int(self.window.frame.height / 35) - 2))
                     self.pageSize = Int(self.window.frame.height / 35) - 2
+                    
+                    //Save filter for resize event
+                    self.data.savedFilter = self.filter
                 }
                 if(pageSize == 0){Spacer()}
             }
