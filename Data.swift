@@ -106,7 +106,6 @@ final class Data: ObservableObject {
         case waiting
         case loading_file
         case loading_dates
-        case loaded_dates
         case loading_logs
         case loaded
         case reloading
@@ -119,8 +118,6 @@ final class Data: ObservableObject {
                     return "Opening file..."
                 case .loading_dates:
                     return "Checking for available dates..."
-                case .loaded_dates:
-                    return "Loaded dates"
                 case .loading_logs:
                     return "Parsing logs..."
                 case .loaded:
@@ -279,12 +276,12 @@ final class Data: ObservableObject {
     private func loadDates() {
         //Enter background thread
         BG {
-            //Parsing
-            print("Begin loading dates in BG")
+
             UI {
                 self.status = .loading_dates
             }
             
+            //Parsing
             for fileIndex in 0...self.file!.lines.count - 1{
                 
                 //Update status every 99? lines
@@ -323,12 +320,15 @@ final class Data: ObservableObject {
             UI {
                 self.message = "line \(Data.getFormattedNumber(self.file!.lines.count))/\(Data.getFormattedNumber(self.file!.lines.count)) | dates \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
                 print("Load dates result, lines: \(self.file!.lines.count), dates: \(self.loadingDatesData.shortDatesList.count)")
-                self.status = .loaded_dates
             }//End UI
             
-            print("End of BG task")
+            self.loadLogs(filter: Filter(showErrors: true, showWarns: true,
+                        startingDate: self.loadingDatesData.shortDatesList[self.loadingDatesData.shortDatesList.count - 1]))
+            
+            print("End of BG task for loadDates()")
+            
         }//End BG
-        print("return from loadDates()")
+        print("Called loadDates()")
     }
     
     func loadLogs(filter: Filter) {
@@ -337,12 +337,6 @@ final class Data: ObservableObject {
         
         //Enter background thread
         BG {
-            var appended = 0
-            var discarded = 0
-            var lastLogIndex: Int = 0
-            
-            //Parsing
-            print("Begin loading logs in BG")
             UI {
                 if(self.status == .loaded) {
                     self.status = .reloading
@@ -351,8 +345,14 @@ final class Data: ObservableObject {
                 }
             }
             
+            //Data
+            var appended = 0
+            var discarded = 0
+            var lastLogIndex: Int = 0
             let startIndex = self.loadingDatesData.firstAt[self.loadingDatesData.shortDatesList.firstIndex(of: filter.startingDate)!]
             print("Starting at index: \(startIndex)")
+            
+            //Parsing
             for fileIndex in startIndex...self.file!.lines.count - 1{
                 
                 //Update status every 99 lines
@@ -449,9 +449,10 @@ final class Data: ObservableObject {
             
             //Save log
             self.logArray = newLogArray
-            print("End of BG task")
+            print("End of BG task for loadLogs()")
+            
         } //End BG
-        print("Returning from loadLogs()")
+        print("Called loadLogs()")
     }
 }
 

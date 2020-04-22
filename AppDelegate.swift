@@ -42,8 +42,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.center()
     }
     
-    func windowDidResize(_ notification: Notification) {
+    /*func windowDidResize(_ notification: Notification) {
         //Reset the contentView when resized
+        let contentView = ContentView(window: window!, firstLoad: false).environmentObject(data)
+        window.contentView = NSHostingView(rootView: contentView)
+    }*/
+    
+    func windowDidEndLiveResize(_ notification: Notification) {
         let contentView = ContentView(window: window!, firstLoad: false).environmentObject(data)
         window.contentView = NSHostingView(rootView: contentView)
     }

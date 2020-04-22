@@ -66,6 +66,9 @@ struct LineView: View {
                 }
             }
             .frame(alignment: .center)
+            .onTapGesture {
+                self.details = !self.details
+            }
             
             //Detailed View
             if(details) {

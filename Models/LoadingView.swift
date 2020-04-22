@@ -18,8 +18,6 @@ func loadingView(_ data: Data, filter: Binding<Filter>) -> AnyView {
             return AnyView(openingView())
         case .loading_dates:
             return AnyView(VLoadingView().environmentObject(data))
-        case .loaded_dates:
-            return AnyView(LoadedDatesView(filter: filter).environmentObject(data))
         case .loading_logs:
             return AnyView(VLoadingView().environmentObject(data))
         default:
@@ -76,6 +74,7 @@ struct openingView: View {
             VStack{
                 Spacer()
                 Text("Log Parser")
+                    .bold()
                 Spacer()
                 Text("")
                 Text("Opening file...")
@@ -86,7 +85,7 @@ struct openingView: View {
     }
 }
 
-struct LoadedDatesView: View {
+/*struct LoadedDatesView: View {
     @EnvironmentObject var data: Data
     @Binding var filter: Filter
     
@@ -104,7 +103,7 @@ struct LoadedDatesView: View {
             Spacer()
         }
     }
-}
+}*/
 
 struct VLoadingView: View {
     @EnvironmentObject var data: Data
@@ -115,6 +114,7 @@ struct VLoadingView: View {
             VStack {
                 Spacer()
                 Text("Log Parser")
+                    .bold()
                 Spacer()
                 Text("\(data.status.toString())")
                 Text("\(data.message ?? "no message")")
@@ -154,22 +154,20 @@ struct searchBarView: View {
     var body: some View {
         //Text ("\(data.status.toString()): \(data.loadingDatesData.shortDatesList.count) dates found")
         HStack {
-            Picker(selection: $numberDaysToLoad, label: Text("Start search at:")) {
+            Picker(selection: $numberDaysToLoad, label: Text("")) {
                 ForEach(minimumNumberOfDaysAgo...maximumNumberOfDaysAgo) {
                     Text(self.generatePickerTextFor(daysAgo: $0))
                 }
             }
             .fixedSize()
-            .disabled(data.status != .loaded &&
-                data.status != .loaded_dates)
+            .disabled(data.status != .loaded)
             
             //Text (limitingDate.description)
-            Button ("Search") {
+            Button ("Refresh") {
                 self.filter.startingDate = self.data.loadingDatesData.convertToShortDate(self.limitingDate)
                 self.data.loadLogs(filter: self.filter)
             }
-            .disabled(data.status != .loaded &&
-                data.status != .loaded_dates)
+            .disabled(data.status != .loaded)
         }
         .onAppear() {
             self.numberDaysToLoad = self.minimumNumberOfDaysAgo

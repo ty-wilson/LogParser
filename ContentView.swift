@@ -23,7 +23,7 @@ struct ContentView: View {
     @State public var pageSize = 0
     @State private var filter = Filter(
         showErrors: true,
-        showWarns: true,
+        showWarns: false,
         startingDate: Date())
     
     let window: NSWindow
@@ -53,7 +53,7 @@ struct ContentView: View {
                 .onAppear() {
                     if(self.firstLoad) {
                         //Maximize window on screen
-                        self.window.setFrame(self.window.screen!.visibleFrame, display: true, animate: true)
+                        self.window.setFrame(self.window.screen!.visibleFrame, display: true)
                         //Resizable
                         self.window.styleMask = [.resizable, .titled, .closable, .miniaturizable, .fullSizeContentView]
                     }
@@ -107,7 +107,6 @@ struct ContentView: View {
         .onAppear() {
             print("ContentView loaded")
         }
-        //.scaledToFill()
     }
 }
 
