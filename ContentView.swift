@@ -36,9 +36,10 @@ struct ContentView: View {
                 loadingView(data, filter: $filter)
             } else {
                 HStack {
-                    //Search
-                    searchBarView(filter: $filter).environmentObject(data)
+                    //Select date and reload
+                    datePickerView(filter: $filter).environmentObject(data)
                     
+                    //Reloading status
                     if(data.status == .reloading) {
                         HLoadingView().environmentObject(data)
                     }
@@ -54,7 +55,7 @@ struct ContentView: View {
                     if(self.firstLoad) {
                         //Maximize window on screen
                         self.window.setFrame(self.window.screen!.visibleFrame, display: true)
-                        //Resizable
+                        //Set to resizable
                         self.window.styleMask = [.resizable, .titled, .closable, .miniaturizable, .fullSizeContentView]
                     }
                 }

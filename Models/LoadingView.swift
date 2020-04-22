@@ -35,6 +35,7 @@ struct waitingView: View {
                 Spacer()
                 Text("Log Parser")
                     .bold()
+                Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
                 Spacer()
                 Text("")
                 Button("Select File...", action: {
@@ -75,6 +76,7 @@ struct openingView: View {
                 Spacer()
                 Text("Log Parser")
                     .bold()
+                Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
                 Spacer()
                 Text("")
                 Text("Opening file...")
@@ -97,7 +99,7 @@ struct openingView: View {
             Text("")
             HStack {
                 Spacer()
-                searchBarView(filter: $filter).environmentObject(data)
+                datePickerView(filter: $filter).environmentObject(data)
                 Spacer()
             }
             Spacer()
@@ -115,6 +117,7 @@ struct VLoadingView: View {
                 Spacer()
                 Text("Log Parser")
                     .bold()
+                Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
                 Spacer()
                 Text("\(data.status.toString())")
                 Text("\(data.message ?? "no message")")
@@ -136,7 +139,7 @@ struct HLoadingView: View {
     }
 }
 
-struct searchBarView: View {
+struct datePickerView: View {
     @EnvironmentObject var data: Data
     @Binding var filter: Filter
     @State var numberDaysToLoad = 0
@@ -163,7 +166,7 @@ struct searchBarView: View {
             .disabled(data.status != .loaded)
             
             //Text (limitingDate.description)
-            Button ("Refresh") {
+            Button ("Reload") {
                 self.filter.startingDate = self.data.loadingDatesData.convertToShortDate(self.limitingDate)
                 self.data.loadLogs(filter: self.filter)
             }

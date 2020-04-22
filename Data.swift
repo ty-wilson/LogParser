@@ -47,7 +47,7 @@ struct Filter {
 struct LoadingDatesData {
     public var shortDatesList: [Date] //expects only short dates from convertToShortDate or shortDateFormatter
     public var occurancesList: [Int]
-    public var firstAt: [Int]
+    public var firstIndexList: [Int]
     
     func occurancesAt(_ rawDate: Date) -> Int {
         let shortDate = convertToShortDate(rawDate)
@@ -145,7 +145,7 @@ final class Data: ObservableObject {
         
         Data.numberFormatter.numberStyle = .decimal
         
-        loadingDatesData = LoadingDatesData(shortDatesList: [Date](), occurancesList: [Int](), firstAt: [Int]())
+        loadingDatesData = LoadingDatesData(shortDatesList: [Date](), occurancesList: [Int](), firstIndexList: [Int]())
     }
     
     func loadFile(filePath: String) {
@@ -306,7 +306,7 @@ final class Data: ObservableObject {
                             //print(self.status.rawValue + ": adding " + date!.description)
                             self.loadingDatesData.shortDatesList.append(date!)
                             self.loadingDatesData.occurancesList.append(1)
-                            self.loadingDatesData.firstAt.append(fileIndex)
+                            self.loadingDatesData.firstIndexList.append(fileIndex)
                         }
                         //Add occurance
                         else {
@@ -349,7 +349,7 @@ final class Data: ObservableObject {
             var appended = 0
             var discarded = 0
             var lastLogIndex: Int = 0
-            let startIndex = self.loadingDatesData.firstAt[self.loadingDatesData.shortDatesList.firstIndex(of: filter.startingDate)!]
+            let startIndex = self.loadingDatesData.firstIndexList[self.loadingDatesData.shortDatesList.firstIndex(of: filter.startingDate)!]
             print("Starting at index: \(startIndex)")
             
             //Parsing

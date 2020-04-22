@@ -16,17 +16,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let data = Data()
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Create the SwiftUI view that provides the window contents.
 
-        //If aStreamReader cannot be initialized the app exits
-        
-        //let path = promptForPath()
-        //exit if no path returned
-        /*if(path == nil) {
-            exit(0)
-        }*/
-
-        // Create the window and set the content view. 
+        // Create the window
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
@@ -34,8 +25,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.setFrameAutosaveName("Main Window")
         window.makeKeyAndOrderFront(nil)
         window.delegate = self
-        //window.setContentSize(window.contentMaxSize)
         
+        // Create the SwiftUI view that provides the window contents.
         let contentView = ContentView(window: window, firstLoad: true).environmentObject(data)
         
         window.contentView = NSHostingView(rootView: contentView)
