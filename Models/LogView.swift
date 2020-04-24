@@ -9,34 +9,28 @@
 import SwiftUI
 
 struct LogView: View {
-    @EnvironmentObject var data: Data
-    var filter: Filter
-    var page: [Log]
-    let window: NSWindow
-    @Binding var pageSize: Int
+
+    var logArray: [Log]
     
     var body: some View {
         VStack {
             HStack {
-                if(pageSize == 0){Spacer()}
+                
+                Spacer()
+                
                 //Scroll View of Line Views
                 ScrollView {
                     VStack(alignment: .leading) {
-                        ForEach(page) { log in
-                            LineView(log: log)
+                        ForEach(logArray) { log in
+                            LineView(log: log, selectedLineNum: log.lineNum[0],
+                                     detailsMinHeight: CGFloat(60 + min(log.lineNum.count, 20) * 20))
                             Divider()
                         }
                     }
                     .padding([.top, .leading, .trailing], 10)
                 }
-                .onAppear(){
-                    print("LogView appeared, sizing: " + String(Int(self.window.frame.height / 35) - 2))
-                    self.pageSize = Int(self.window.frame.height / 35) - 2
-                    
-                    //Save filter for resize event
-                    self.data.savedFilter = self.filter
-                }
-                if(pageSize == 0){Spacer()}
+ 
+                Spacer()
             }
         }
     }

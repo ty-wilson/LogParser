@@ -8,6 +8,7 @@
 
 import Foundation
 import NotificationCenter
+import AppKit
 
 /*Structs*/
 
@@ -33,7 +34,8 @@ struct Log: Hashable, Identifiable {
     var threadAtLine: Dictionary<Int, String>
     let process: String
     var text: String
-    var otherText: String = ""
+    //var otherText: String = ""
+    var traceAtLine: Dictionary<Int, String>
 }
 
 //Determines what logs to return
@@ -93,15 +95,9 @@ final class Data: ObservableObject {
     private let longDateFormatter: DateFormatter
     
     private var file: File?
-    //private var defaultPath = "/Users/tyler.wilson/Downloads/JAMFSoftwareServer.log"
     private var logArray: [Log]?
     
     public var loadingDatesData: LoadingDatesData
-    
-    public var savedFilter = Filter(
-                showErrors: true,
-                showWarns: false,
-                startingDate: Date())
     
     @Published var status: Status = .waiting
     @Published var message: String?
@@ -158,9 +154,17 @@ final class Data: ObservableObject {
             UI {
                 self.status = .loading_file
             }
-
-            //Will crash if file fails to open
-            self.file = File(path: filePath)!
+            
+            self.file = File(path: filePath)
+            
+            //Fail to open file
+            if(self.file == nil) {
+                UI {
+                    self.status = .waiting
+                }
+                Data.alertMessage("Failed to open file:\n\(filePath)")
+                return
+            }
             
             self.loadDates()
         }
@@ -172,7 +176,7 @@ final class Data: ObservableObject {
         return loadingDatesData.shortDatesList[0]
     }
     
-    func getNumLogs(filter: Filter) -> Int {
+    func getNumFilteredLogs(filter: Filter) -> Int {
         var num = 0
         
         if(logArray != nil) {
@@ -187,76 +191,23 @@ final class Data: ObservableObject {
         return num
     }
     
-    /*Pages*/
-    
-    func getLastPage(pageSize: Int, filter: Filter) -> Int {
-        var go = true
-        var count = 0
-        while(go) {
-            count += 1
-            go = self.hasPage(count, pageSize: pageSize, filter: filter)
-        }
-        return count - 1
-    }
-    
-    func hasPage(_ pageNum: Int, pageSize: Int, filter: Filter) -> Bool {
-        if(getFirstLogAtPage(pageNum, pageSize: pageSize, filter: filter) != -1) {
-            return true
-        }
-        //print("Does not have page: \(pageNum)")
-        return false
-    }
-    
-    func getPage(_ pageNum: Int, pageSize: Int, filter: Filter) -> [Log]? {
+    func getLogs(filter: Filter) -> [Log]? {
         var foundLogArray = [Log]()
         let logArray = self.logArray ?? [Log]()
+        var logIndex = 0
         
-        //check that data is loaded
-        if(pageSize != 0 && logArray.count / pageSize >= pageNum) {
-            var foundCount = 0
-            var logIndex = getFirstLogAtPage(pageNum, pageSize: pageSize, filter: filter)
-            
-            //Load page up to page size, starting at logIndex, stop at end of logArray
-            while(foundCount < pageSize && logArray.count > logIndex) {
-                if(filter.showErrors && logArray[logIndex].title == .ERROR) {
-                    foundCount += 1
-                    foundLogArray.append(logArray[logIndex])
-                } else if(filter.showWarns && logArray[logIndex].title == .WARN) {
-                    foundCount += 1
-                    foundLogArray.append(logArray[logIndex])
-                }
-                
-                logIndex += 1
+        //Load page up to page size, starting at logIndex, stop at end of logArray
+        while(logArray.count > logIndex) {
+            if(filter.showErrors && logArray[logIndex].title == .ERROR) {
+                foundLogArray.append(logArray[logIndex])
+            } else if(filter.showWarns && logArray[logIndex].title == .WARN) {
+                foundLogArray.append(logArray[logIndex])
             }
-            //print("Done loading at count \(logIndex), log size: \(foundLogArray.count)")
+            
+            logIndex += 1
         }
         
         return foundLogArray
-    }
-    
-    private func getFirstLogAtPage(_ pageNum: Int, pageSize: Int, filter: Filter) -> Int {
-        var logIndex = -1
-        var foundCount = 0
-        let logArray = self.logArray ?? [Log]()
-        
-        //Find requested page by logCount, stop at end of file
-        while(foundCount < (pageNum * pageSize) + 1) {
-            
-            logIndex += 1
-            
-            if(logIndex < logArray.count) {
-                if((filter.showErrors && logArray[logIndex].title == .ERROR) ||
-                    (filter.showWarns && logArray[logIndex].title == .WARN)) {
-                    foundCount += 1
-                }
-            } else {
-                //Reset if reached EOF
-                logIndex = -1
-                break
-            }
-        }
-        
-        return logIndex
     }
     
     /*Static*/
@@ -272,6 +223,16 @@ final class Data: ObservableObject {
     
     static func getFormattedNumber(_ num: Int) -> String {
         return self.numberFormatter.string(from: NSNumber(value: num)) ?? "invalid number"
+    }
+    
+    static func alertMessage(_ text: String) {
+        UIS {
+            let alert = NSAlert()
+            alert.messageText = text
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
     }
     
     /*Parsing*/
@@ -291,7 +252,7 @@ final class Data: ObservableObject {
                 //Update status every 99? lines
                 if(fileIndex % 99 == 0) {
                     UI {
-                        self.message = "line \(Data.getFormattedNumber(fileIndex))/\(Data.getFormattedNumber(self.file!.lines.count)) | dates \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
+                        self.message = "line: \(Data.getFormattedNumber(fileIndex))/\(Data.getFormattedNumber(self.file!.lines.count)) | unique dates: \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
                     }//End UI
                 }
                 
@@ -322,12 +283,23 @@ final class Data: ObservableObject {
             //End Parsing
             
             UI {
-                self.message = "line \(Data.getFormattedNumber(self.file!.lines.count))/\(Data.getFormattedNumber(self.file!.lines.count)) | dates \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
+                self.message = "line: \(Data.getFormattedNumber(self.file!.lines.count))/\(Data.getFormattedNumber(self.file!.lines.count))" +
+                " | unique dates: \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
+                
                 print("Load dates result, lines: \(self.file!.lines.count), dates: \(self.loadingDatesData.shortDatesList.count)")
             }//End UI
             
-            self.loadLogs(filter: Filter(showErrors: true, showWarns: true,
-                        startingDate: self.loadingDatesData.shortDatesList[self.loadingDatesData.shortDatesList.count - 1]))
+            //Load logs next
+            if(self.loadingDatesData.shortDatesList.count > 0) {
+                self.loadLogs(filter: Filter(showErrors: true, showWarns: true,
+                            startingDate: self.loadingDatesData.shortDatesList[self.loadingDatesData.shortDatesList.count - 1]))
+            } else {
+                UI {
+                    self.status = .waiting
+                }
+                Data.alertMessage("Unrecognized file contents:\n\(self.file!.getPath())")
+                return
+            }
             
             print("End of BG task for loadDates()")
             
@@ -362,7 +334,7 @@ final class Data: ObservableObject {
                 //Update status every 99 lines
                 if(fileIndex % 99 == 0) {
                     UI {
-                        self.message = "line \(Data.getFormattedNumber(fileIndex - startIndex))/\(Data.getFormattedNumber(self.file!.lines.count - startIndex)) | logs found \(Data.getFormattedNumber(newLogArray.count))"
+                        self.message = "line: \(Data.getFormattedNumber(fileIndex - startIndex))/\(Data.getFormattedNumber(self.file!.lines.count - startIndex)) | unique logs: \(Data.getFormattedNumber(newLogArray.count))"
                     }//End UI
                 }
                 
@@ -387,11 +359,11 @@ final class Data: ObservableObject {
                     continue
                 }
                 
-                //If not formattable or discardable, append to last log > other text
+                //If not formattable or discardable, append to last the most recently found log's current trace
                 if(lineChunks.count != 4) {
                     //print("Appending to \(lastLogIndex)")
                     if(newLogArray.count != 0) {
-                        newLogArray[lastLogIndex].otherText.append("\n\(self.file!.lines[fileIndex])")
+                        newLogArray[lastLogIndex].traceAtLine[newLogArray[lastLogIndex].lineNum.last!]?.append("\n\(self.file!.lines[fileIndex])")
                         appended += 1
                     }
                     continue
@@ -409,17 +381,20 @@ final class Data: ObservableObject {
                             lastLogIndex = logIndex
                             
                             //Add data to found log
-                            if(newLogArray[logIndex].text != splitLine[1]) {
-                                newLogArray[logIndex].otherText.append("\n\n> \(splitLine[1])")
-                            }
+                            
+                            //Add line number
                             newLogArray[logIndex].lineNum.append(fileIndex)
+                            //Add date at line
                             let date = self.longDateFormatter.date(from: String(lineChunks[0]))
                             if(date != nil) {
                                 newLogArray[logIndex].dateAtLine.updateValue(date, forKey: fileIndex)
                             } else {
                                 print("Discarding date: " + lineChunks[0])
                             }
+                            //Add thread at line
                             newLogArray[logIndex].threadAtLine.updateValue(lineChunks[2], forKey: fileIndex)
+                            //Start trace at line
+                            newLogArray[logIndex].traceAtLine.updateValue(splitLine[1], forKey: fileIndex)
                             
                             continue
                                                                                 
@@ -436,7 +411,8 @@ final class Data: ObservableObject {
                                      title: Data.stringToTitle(lineChunks[1]),
                                      threadAtLine: [fileIndex : lineChunks[2]],
                                      process: lineChunks[3],
-                                     text: splitLine[1])
+                                     text: splitLine[1],
+                                     traceAtLine: [fileIndex : splitLine[1]])
                     
                     lastLogIndex = newLogArray.count
                     //Add new log data
@@ -446,8 +422,11 @@ final class Data: ObservableObject {
             //End Parsing
             
             UI {
-                self.message = "line \(Data.getFormattedNumber(self.file!.lines.count - startIndex))/\(Data.getFormattedNumber(self.file!.lines.count - startIndex)) | logs parsed \(Data.getFormattedNumber(newLogArray.count))"
+                self.message = "line: \(Data.getFormattedNumber(self.file!.lines.count - startIndex))/\(Data.getFormattedNumber(self.file!.lines.count - startIndex))" +
+                " | unique logs: \(Data.getFormattedNumber(newLogArray.count))"
+                
                 print("Load logs result, lines: \(self.file!.lines.count - startIndex), logs: \(newLogArray.count), discarded: \(discarded), appended: \(appended)")
+                
                 self.status = .loaded
             }//End UI
             
@@ -466,6 +445,10 @@ func BG(_ block: @escaping ()->Void) {
 
 func UI(_ block: @escaping ()->Void) {
     DispatchQueue.main.async(execute: block)
+}
+
+func UIS(_ block: @escaping ()->Void) {
+    DispatchQueue.main.sync(execute: block)
 }
 
 extension Int: Identifiable{

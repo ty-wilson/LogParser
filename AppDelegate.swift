@@ -10,12 +10,13 @@ import Cocoa
 import SwiftUI
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate {
 
     var window: NSWindow!
-    let data = Data()
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        
+        let data = Data()
 
         // Create the window
         window = NSWindow(
@@ -24,24 +25,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             backing: .buffered, defer: false) 
         window.setFrameAutosaveName("Main Window")
         window.makeKeyAndOrderFront(nil)
-        window.delegate = self
         
         // Create the SwiftUI view that provides the window contents.
-        let contentView = ContentView(window: window, firstLoad: true).environmentObject(data)
+        let contentView = ContentView(window: window).environmentObject(data)
         
         window.contentView = NSHostingView(rootView: contentView)
         window.center()
-    }
-    
-    /*func windowDidResize(_ notification: Notification) {
-        //Reset the contentView when resized
-        let contentView = ContentView(window: window!, firstLoad: false).environmentObject(data)
-        window.contentView = NSHostingView(rootView: contentView)
-    }*/
-    
-    func windowDidEndLiveResize(_ notification: Notification) {
-        let contentView = ContentView(filter: data.savedFilter, window: window!, firstLoad: false).environmentObject(data)
-        window.contentView = NSHostingView(rootView: contentView)
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

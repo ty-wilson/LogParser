@@ -35,6 +35,7 @@ struct waitingView: View {
                 Spacer()
                 Text("Log Parser")
                     .bold()
+                Spacer()
                 Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
                 Spacer()
                 Text("")
@@ -87,26 +88,6 @@ struct openingView: View {
     }
 }
 
-/*struct LoadedDatesView: View {
-    @EnvironmentObject var data: Data
-    @Binding var filter: Filter
-    
-    var body: some View {
-        VStack {
-            Spacer()
-            Text("Log Parser")
-            Spacer()
-            Text("")
-            HStack {
-                Spacer()
-                datePickerView(filter: $filter).environmentObject(data)
-                Spacer()
-            }
-            Spacer()
-        }
-    }
-}*/
-
 struct VLoadingView: View {
     @EnvironmentObject var data: Data
     
@@ -155,7 +136,6 @@ struct datePickerView: View {
     }
     
     var body: some View {
-        //Text ("\(data.status.toString()): \(data.loadingDatesData.shortDatesList.count) dates found")
         HStack {
             Picker(selection: $numberDaysToLoad, label: Text("")) {
                 ForEach(minimumNumberOfDaysAgo...maximumNumberOfDaysAgo) {
@@ -165,7 +145,6 @@ struct datePickerView: View {
             .fixedSize()
             .disabled(data.status != .loaded)
             
-            //Text (limitingDate.description)
             Button ("Reload") {
                 self.filter.startingDate = self.data.loadingDatesData.convertToShortDate(self.limitingDate)
                 self.data.loadLogs(filter: self.filter)

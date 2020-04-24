@@ -20,6 +20,10 @@ class File {
     private let fileContent: NSString
     private let path: String
     public var lines: [String]
+    
+    func getPath() -> String {
+        return path
+    }
 
     init?(path: String, delimiter: String = "\n", encoding: String.Encoding = .utf8,
           chunkSize: Int = 4096) {
