@@ -46,7 +46,8 @@ struct ContentView: View {
                     Spacer()
                     
                     Text(String(data.getNumFilteredLogs(filter: filter)) + " logs: ")
-                        .foregroundColor(Color.secondary)
+                        .foregroundColor(.white)
+                        .bold()
                     
                     //Filters
                     Toggle("Show Errors", isOn: $filter.showErrors)

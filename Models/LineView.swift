@@ -93,9 +93,10 @@ struct LineView: View {
                             Text("line \(selectedLineNum!)")
                                 .foregroundColor(.secondary)
                             Text(log.traceAtLine[selectedLineNum!]!)
-                                .truncationMode(.middle)
+                                .frame(maxWidth: 1000)
                         }
                         .padding(15)//Text padding
+                        .fixedSize()
                     }
                 }
                 .padding(.leading, 20)//Indent
