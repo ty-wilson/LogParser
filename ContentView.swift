@@ -20,12 +20,12 @@ extension Color {
 
 struct ContentView: View {
     @EnvironmentObject var data: Data
- 
     @State public var filter = Filter(
         showErrors: true,
         showWarns: false,
         searchText: "",
         includeTrace: false)
+    @State var searchSettingsOn = false
     
     let window: NSWindow
     
@@ -36,25 +36,40 @@ struct ContentView: View {
                 loadingView(data, filter: $filter)
             } else {
                 HStack {
-                    //Date picker and reload button
-                    datePickerView().environmentObject(data)
-                    
-                    Divider().fixedSize()
-                    
                     //Filters
-                    Toggle("Show Errors", isOn: $filter.showErrors)
-                    Toggle("Show Warns", isOn: $filter.showWarns)
+                    TextField("🔎 Search", text: $filter.searchText)
                     
-                    Text("= " + String(data.getNumFilteredLogs(filter: filter)) + " logs")
+                    //Search settings
+                    if(searchSettingsOn) {
+                        //Reloading status
+                        if(data.status == .reloading) {
+                            HLoadingView().environmentObject(data)
+                        }
+                        
+                        Toggle("ERROR", isOn: $filter.showErrors)
+                            .foregroundColor(Color.uiRed)
+                        Toggle("WARN", isOn: $filter.showWarns)
+                            .foregroundColor(.yellow)
+
+                        //Date picker and reload button
+                        datePickerView().environmentObject(data)
+                    }
+                    
+                    Button(action: {
+                        self.searchSettingsOn = !self.searchSettingsOn
+                    }) {
+                        if(self.searchSettingsOn) {
+                            Image("GearOn")
+                        } else {
+                            Image("GearOff")
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .toggleStyle(SwitchToggleStyle())
+                        
+                    Text(String(data.getNumFilteredLogs(filter: filter)) + " logs")
                     .foregroundColor(.white)
                     .bold()
-                    
-                    Spacer()
-                    
-                    //Reloading status
-                    if(data.status == .reloading) {
-                        HLoadingView().environmentObject(data)
-                    }
                 }
                 .padding([.top, .leading, .trailing], 8)
                 

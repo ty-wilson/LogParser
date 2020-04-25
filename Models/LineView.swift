@@ -32,15 +32,16 @@ struct LineView: View {
             HStack(alignment: .top) {
                 Button(arrowText, action: {
                     self.details = !self.details
-                }).foregroundColor(Color.uiGreen)
+                }).foregroundColor(Color.uiBlue)
                 .buttonStyle(PlainButtonStyle())
-                .overlay(Circle().stroke(Color.uiGreen, lineWidth: 1))
+                .overlay(Circle().stroke(Color.uiBlue, lineWidth: 1))
                     .shadow(color: Color.white, radius: 1)
 
-                Text(String(log.lineNum.count) + "x").foregroundColor(Color.uiGreen)
+                Text(String(log.lineNum.count) + "x")
+                    .foregroundColor(Color.secondary)
                 
                 colorTitle(title: log.title)
-                Text(log.process).foregroundColor(Color.uiBlue)
+                Text(log.process).foregroundColor(Color.uiGreen)
                 Text(log.text).foregroundColor(.white).lineLimit(1)
                 
                 Spacer()
@@ -49,10 +50,10 @@ struct LineView: View {
                 if(log.lineNum.count > 1) {
                     Text("\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
                         "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))")
-                        .foregroundColor(Color.uiGreen)
+                        .foregroundColor(Color.uiBlue)
                 } else {
                     Text ("\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))")
-                        .foregroundColor(Color.uiGreen)
+                        .foregroundColor(Color.uiBlue)
                 }
             }
             .frame(alignment: .center)
