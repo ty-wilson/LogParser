@@ -23,11 +23,11 @@ struct LogView: View {
                     VStack(alignment: .leading) {
                         ForEach(logArray) { log in
                             LineView(log: log, selectedLineNum: log.lineNum[0],
-                                     detailsMinHeight: CGFloat(60 + min(log.lineNum.count, 40) * 20))
+                                     detailsMinHeight: CGFloat(50 + min(log.lineNum.count, 35) * 25))
                             Divider()
                         }
                     }
-                    .padding([.top, .leading, .trailing], 10)
+                    .padding([.top, .trailing], 10)
                 }
  
                 Spacer()

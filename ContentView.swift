@@ -24,7 +24,8 @@ struct ContentView: View {
     @State public var filter = Filter(
         showErrors: true,
         showWarns: false,
-        startingDate: Date())
+        searchText: "",
+        includeTrace: false)
     
     let window: NSWindow
     
@@ -36,22 +37,24 @@ struct ContentView: View {
             } else {
                 HStack {
                     //Date picker and reload button
-                    datePickerView(filter: $filter).environmentObject(data)
+                    datePickerView().environmentObject(data)
+                    
+                    Divider().fixedSize()
+                    
+                    //Filters
+                    Toggle("Show Errors", isOn: $filter.showErrors)
+                    Toggle("Show Warns", isOn: $filter.showWarns)
+                    
+                    Text("= " + String(data.getNumFilteredLogs(filter: filter)) + " logs")
+                    .foregroundColor(.white)
+                    .bold()
+                    
+                    Spacer()
                     
                     //Reloading status
                     if(data.status == .reloading) {
                         HLoadingView().environmentObject(data)
                     }
-                    
-                    Spacer()
-                    
-                    Text(String(data.getNumFilteredLogs(filter: filter)) + " logs: ")
-                        .foregroundColor(.white)
-                        .bold()
-                    
-                    //Filters
-                    Toggle("Show Errors", isOn: $filter.showErrors)
-                    Toggle("Show Warns", isOn: $filter.showWarns)
                 }
                 .padding([.top, .leading, .trailing], 8)
                 

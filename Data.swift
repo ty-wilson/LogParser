@@ -34,7 +34,6 @@ struct Log: Hashable, Identifiable {
     var threadAtLine: Dictionary<Int, String>
     let process: String
     var text: String
-    //var otherText: String = ""
     var traceAtLine: Dictionary<Int, String>
 }
 
@@ -42,12 +41,17 @@ struct Log: Hashable, Identifiable {
 struct Filter {
     var showErrors: Bool
     var showWarns: Bool
-    var startingDate: Date
+    var searchText: String
+    var includeTrace: Bool
+}
+
+struct ShortDate: Equatable {
+    let d: Date
 }
 
 //Startup data
 struct LoadingDatesData {
-    public var shortDatesList: [Date] //expects only short dates from convertToShortDate or shortDateFormatter
+    public var shortDatesList: [ShortDate] //expects only short dates from convertToShortDate or textToShortDateFormatter
     public var occurancesList: [Int]
     public var firstIndexList: [Int]
     
@@ -68,7 +72,7 @@ struct LoadingDatesData {
         //Check if dates in the datesData are after the date and add the occurances from that date to the total
         if(shortDatesList.firstIndex(of: shortDate) != nil) {
             for datesIndex in 0...shortDatesList.count - 1 {
-                if (shortDatesList[datesIndex].compare(shortDate) != .orderedAscending) {
+                if (shortDatesList[datesIndex].d.compare(shortDate.d) != .orderedAscending) {
                     total += occurancesList[datesIndex]
                 }
             }
@@ -77,10 +81,10 @@ struct LoadingDatesData {
         return total
     }
     
-    func convertToShortDate(_ date: Date) -> Date {
+    func convertToShortDate(_ date: Date) -> ShortDate {
         let extraTime = Int(date.timeIntervalSince1970) % SECONDS_PER_DAY
         let newDate = Date(timeIntervalSince1970: TimeInterval(Int(date.timeIntervalSince1970) - extraTime))
-        return newDate
+        return ShortDate(d: newDate)
     }
 }
 
@@ -89,14 +93,16 @@ struct LoadingDatesData {
 final class Data: ObservableObject {
     
     static let numberFormatter = NumberFormatter()
-    static let dateFormatter = DateFormatter()
+    static let dateToShortTextFormatter = DateFormatter()
+    static let dateToLongTextFormatter = DateFormatter()
     
-    private let shortDateFormatter: DateFormatter
-    private let longDateFormatter: DateFormatter
+    private let textToShortDateFormatter: DateFormatter
+    private let textToLongDateFormatter: DateFormatter
     
     private var file: File?
     private var logArray: [Log]?
     
+    public var startingDate: ShortDate
     public var loadingDatesData: LoadingDatesData
     
     @Published var status: Status = .waiting
@@ -129,23 +135,32 @@ final class Data: ObservableObject {
     }
     
     init() {
-        shortDateFormatter = DateFormatter()
-        shortDateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        shortDateFormatter.dateFormat = "yyyy-MM-dd"
-        shortDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
-        longDateFormatter = DateFormatter()
-        longDateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        longDateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss,SSS"
-        longDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        print("Initializing Data")
+        textToShortDateFormatter = DateFormatter()
+        textToShortDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        textToShortDateFormatter.dateFormat = "yyyy-MM-dd"
+        textToShortDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
-        Data.dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        Data.dateFormatter.dateStyle = .long
-        Data.dateFormatter.timeStyle = .short
+        textToLongDateFormatter = DateFormatter()
+        textToLongDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        textToLongDateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss,SSS"
+        textToLongDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        Data.dateToShortTextFormatter.locale = Locale(identifier: "en_US_POSIX")
+        Data.dateToShortTextFormatter.dateStyle = .long
+        Data.dateToShortTextFormatter.timeStyle = .short
+        Data.dateToShortTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        Data.dateToLongTextFormatter.locale = Locale(identifier: "en_US_POSIX")
+        Data.dateToLongTextFormatter.dateStyle = .full
+        Data.dateToLongTextFormatter.timeStyle = .long
+        Data.dateToLongTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         Data.numberFormatter.numberStyle = .decimal
         
-        loadingDatesData = LoadingDatesData(shortDatesList: [Date](), occurancesList: [Int](), firstIndexList: [Int]())
+        loadingDatesData = LoadingDatesData(shortDatesList: [ShortDate](), occurancesList: [Int](), firstIndexList: [Int]())
+        startingDate = loadingDatesData.convertToShortDate(Date())
     }
     
     func loadFile(filePath: String) {
@@ -173,7 +188,7 @@ final class Data: ObservableObject {
     /*Get*/
     
     func getFirstDate() -> Date? {
-        return loadingDatesData.shortDatesList[0]
+        return loadingDatesData.shortDatesList[0].d
     }
     
     func getNumFilteredLogs(filter: Filter) -> Int {
@@ -262,20 +277,21 @@ final class Data: ObservableObject {
                 if(seperator != nil)
                 {
                     let dateText = self.file!.lines[fileIndex][...seperator!].dropLast()
-                    let date = self.shortDateFormatter.date(from: String(dateText))
+                    let date = self.textToShortDateFormatter.date(from: String(dateText))
                     
                     if(date != nil)
                     {
+                        let shortDate = ShortDate(d: date!)
                         //Add date if new
-                        if(!self.loadingDatesData.shortDatesList.contains(date!)) {
+                        if(!self.loadingDatesData.shortDatesList.contains(shortDate)) {
                             //print(self.status.rawValue + ": adding " + date!.description)
-                            self.loadingDatesData.shortDatesList.append(date!)
+                            self.loadingDatesData.shortDatesList.append(shortDate)
                             self.loadingDatesData.occurancesList.append(1)
                             self.loadingDatesData.firstIndexList.append(fileIndex)
                         }
                         //Add occurance
                         else {
-                            self.loadingDatesData.occurancesList[self.loadingDatesData.shortDatesList.firstIndex(of: date!)!] += 1
+                            self.loadingDatesData.occurancesList[self.loadingDatesData.shortDatesList.firstIndex(of: shortDate)!] += 1
                         }
                     }
                 }
@@ -291,8 +307,8 @@ final class Data: ObservableObject {
             
             //Load logs next
             if(self.loadingDatesData.shortDatesList.count > 0) {
-                self.loadLogs(filter: Filter(showErrors: true, showWarns: true,
-                            startingDate: self.loadingDatesData.shortDatesList[self.loadingDatesData.shortDatesList.count - 1]))
+                self.startingDate = self.loadingDatesData.shortDatesList[self.loadingDatesData.shortDatesList.count - 1]
+                self.loadLogs()
             } else {
                 UI {
                     self.status = .waiting
@@ -307,12 +323,12 @@ final class Data: ObservableObject {
         print("Called loadDates()")
     }
     
-    func loadLogs(filter: Filter) {
-        
-        var newLogArray = [Log]()
+    func loadLogs() {
         
         //Enter background thread
         BG {
+            var newLogArray = [Log]()
+            
             UI {
                 if(self.status == .loaded) {
                     self.status = .reloading
@@ -325,8 +341,8 @@ final class Data: ObservableObject {
             var appended = 0
             var discarded = 0
             var lastLogIndex: Int = 0
-            let startIndex = self.loadingDatesData.firstIndexList[self.loadingDatesData.shortDatesList.firstIndex(of: filter.startingDate)!]
-            print("Starting at index: \(startIndex)")
+            let startIndex = self.loadingDatesData.firstIndexList[self.loadingDatesData.shortDatesList.firstIndex(of: self.startingDate)!]
+            print("Starting at \(self.startingDate). index: \(startIndex)")
             
             //Parsing
             for fileIndex in startIndex...self.file!.lines.count - 1{
@@ -385,7 +401,7 @@ final class Data: ObservableObject {
                             //Add line number
                             newLogArray[logIndex].lineNum.append(fileIndex)
                             //Add date at line
-                            let date = self.longDateFormatter.date(from: String(lineChunks[0]))
+                            let date = self.textToLongDateFormatter.date(from: String(lineChunks[0]))
                             if(date != nil) {
                                 newLogArray[logIndex].dateAtLine.updateValue(date, forKey: fileIndex)
                             } else {
@@ -407,7 +423,7 @@ final class Data: ObservableObject {
                     
                 if(!wasFound) {
                     let newLogRecord = Log(lineNum: [fileIndex],
-                                     dateAtLine: [fileIndex : self.longDateFormatter.date(from: lineChunks[0])],
+                                     dateAtLine: [fileIndex : self.textToLongDateFormatter.date(from: lineChunks[0])],
                                      title: Data.stringToTitle(lineChunks[1]),
                                      threadAtLine: [fileIndex : lineChunks[2]],
                                      process: lineChunks[3],

@@ -37,7 +37,7 @@ struct LineView: View {
                 .overlay(Circle().stroke(Color.uiGreen, lineWidth: 1))
                     .shadow(color: Color.white, radius: 1)
 
-                Text(String(log.lineNum.count)).foregroundColor(Color.uiGreen)
+                Text(String(log.lineNum.count) + "x").foregroundColor(Color.uiGreen)
                 
                 colorTitle(title: log.title)
                 Text(log.process).foregroundColor(Color.uiBlue)
@@ -47,11 +47,11 @@ struct LineView: View {
                 
                 //Date Range
                 if(log.lineNum.count > 1) {
-                    Text("\(Data.dateFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
-                        "\(Data.dateFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))")
+                    Text("\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
+                        "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))")
                         .foregroundColor(Color.uiGreen)
                 } else {
-                    Text ("\(Data.dateFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))")
+                    Text ("\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))")
                         .foregroundColor(Color.uiGreen)
                 }
             }
@@ -79,13 +79,11 @@ struct LineView: View {
                                     .foregroundColor(Color.uiGreen)
                                 Text("[\(self.log.threadAtLine[num]!)]")
                                     .foregroundColor(Color.uiPurple)
-                            }.padding(5)//Each line padding
+                            }.padding(3)//Each line padding
                         }
                         .frame(width: 600)
                     }.padding([.top, .bottom], 10)
                     .frame(minHeight: detailsMinHeight)
-                    
-                    //Divider()
                     
                     //Text: Combine text with other text
                     if(selectedLineNum != nil) {
@@ -95,11 +93,11 @@ struct LineView: View {
                             Text(log.traceAtLine[selectedLineNum!]!)
                                 .frame(maxWidth: 1000)
                         }
-                        .padding(15)//Text padding
+                        .padding(10)//Text padding
                         .fixedSize()
                     }
                 }
-                .padding(.leading, 20)//Indent
+                .padding(.leading, 15)//Indent
             }
         }
     }
