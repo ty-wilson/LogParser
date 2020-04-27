@@ -8,8 +8,6 @@
 
 import SwiftUI
 
-let SECONDS_PER_DAY = 86400
-
 func loadingView(_ data: Data, filter: Binding<Filter>) -> AnyView {
     switch data.status {
         case .waiting:
@@ -33,11 +31,16 @@ struct waitingView: View {
             Spacer()
             VStack{
                 Spacer()
+                
                 Text("Log Parser")
                     .bold()
+                
                 Spacer()
+                
                 Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
+                
                 Spacer()
+                
                 Text("")
                 Button("Select File...", action: {
                     UI {
@@ -62,6 +65,15 @@ struct waitingView: View {
                         }
                     }
                 }).buttonStyle(BorderedButtonStyle())
+                .onHover(perform: {val in
+                    if(NSCursor.current == NSCursor.arrow){
+                        NSCursor.pointingHand.set()
+                    } else if(NSCursor.current == NSCursor.pointingHand) {
+                        NSCursor.arrow.set()
+                    }
+                })
+                .padding(1)
+                
                 Spacer()
             }
             Spacer()

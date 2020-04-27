@@ -10,6 +10,8 @@ import Foundation
 import NotificationCenter
 import AppKit
 
+let SECONDS_PER_DAY = 86400
+
 /*Structs*/
 
 struct Log: Hashable, Identifiable {
@@ -28,13 +30,18 @@ struct Log: Hashable, Identifiable {
         return dateAtLine[dateAtLine.keys.first!]!
     }
     
+    mutating func toggleDetails() {
+        showDetails = !showDetails
+    }
+    
     var lineNum: [Int]
     var dateAtLine: Dictionary<Int, Date?>
     let title: Title
     var threadAtLine: Dictionary<Int, String>
     let process: String
-    var text: String
+    let text: String
     var traceAtLine: Dictionary<Int, String>
+    var showDetails: Bool
 }
 
 //Determines what logs to return
@@ -100,7 +107,7 @@ final class Data: ObservableObject {
     private let textToLongDateFormatter: DateFormatter
     
     private var file: File?
-    private var logArray: [Log]?
+    public var logArray = [Log]()
     
     public var startingDate: ShortDate
     public var loadingDatesData: LoadingDatesData
@@ -185,6 +192,41 @@ final class Data: ObservableObject {
         }
     }
     
+    func toggleShowDetails(_ logToChange: Log) {
+        for index in 0...logArray.count - 1 {
+            if(logArray[index].text == logToChange.text) {
+                logArray[index].toggleDetails()
+            }
+        }
+    }
+    
+    func fileToText() -> String {
+        var text = ""
+        
+        for line in file!.lines {
+            text.append(line)
+        }
+        
+        return text
+    }
+    
+    func getFilePath() -> String {
+        return file!.getPath()
+    }
+    
+    //for resetting the text on edit
+    func getLog(logToGet: Log) -> Log? {
+        var foundLog: Log?
+        
+        for index in 0...logArray.count - 1 {
+            if(logArray[index].text == logToGet.text) {
+                foundLog = logArray[index]
+            }
+        }
+        
+        return foundLog
+    }
+    
     /*Get*/
     
     func getFirstDate() -> Date? {
@@ -194,8 +236,8 @@ final class Data: ObservableObject {
     func getNumFilteredLogs(filter: Filter) -> Int {
         var num = 0
         
-        if(logArray != nil) {
-            for log in logArray! {
+        if(logArray.count > 0) {
+            for log in logArray {
                 if(((log.title == .ERROR) && filter.showErrors) ||
                     ((log.title == .WARN) && filter.showWarns)) {
                     num += 1
@@ -206,16 +248,33 @@ final class Data: ObservableObject {
         return num
     }
     
-    func getLogs(filter: Filter) -> [Log]? {
+    func getFilteredLogs(filter: Filter) -> [Log] {
         var foundLogArray = [Log]()
-        let logArray = self.logArray ?? [Log]()
         var logIndex = 0
         
-        //Load page up to page size, starting at logIndex, stop at end of logArray
         while(logArray.count > logIndex) {
-            if(filter.showErrors && logArray[logIndex].title == .ERROR) {
-                foundLogArray.append(logArray[logIndex])
-            } else if(filter.showWarns && logArray[logIndex].title == .WARN) {
+            
+            //Compare with filter
+            if(filter.includeTrace && filter.searchText != ""){
+                var found = false
+                
+                for trace in logArray[logIndex].traceAtLine.values {
+                   if(trace.contains(filter.searchText)) {
+                       found = true
+                   }
+               }
+                if(!found) {
+                    logIndex += 1
+                    continue
+                }
+            } else if(filter.searchText != "" && !logArray[logIndex].text.contains(filter.searchText)){
+                logIndex += 1
+                continue
+            }
+            
+            
+            if(filter.showErrors && logArray[logIndex].title == .ERROR ||
+                filter.showWarns && logArray[logIndex].title == .WARN) {
                 foundLogArray.append(logArray[logIndex])
             }
             
@@ -308,7 +367,7 @@ final class Data: ObservableObject {
             //Load logs next
             if(self.loadingDatesData.shortDatesList.count > 0) {
                 self.startingDate = self.loadingDatesData.shortDatesList[self.loadingDatesData.shortDatesList.count - 1]
-                self.loadLogs()
+                self.loadLogs(true)
             } else {
                 UI {
                     self.status = .waiting
@@ -323,7 +382,7 @@ final class Data: ObservableObject {
         print("Called loadDates()")
     }
     
-    func loadLogs() {
+    func loadLogs(_ untilFound: Bool = false) {
         
         //Enter background thread
         BG {
@@ -428,7 +487,8 @@ final class Data: ObservableObject {
                                      threadAtLine: [fileIndex : lineChunks[2]],
                                      process: lineChunks[3],
                                      text: splitLine[1],
-                                     traceAtLine: [fileIndex : splitLine[1]])
+                                     traceAtLine: [fileIndex : splitLine[1]],
+                                     showDetails: false)
                     
                     lastLogIndex = newLogArray.count
                     //Add new log data
@@ -449,6 +509,12 @@ final class Data: ObservableObject {
             //Save log
             self.logArray = newLogArray
             print("End of BG task for loadLogs()")
+            
+            //Continue loading if no logs were found
+            if(untilFound && self.logArray.count == 0) {
+                self.startingDate = ShortDate(d: self.startingDate.d.advanced(by: TimeInterval(-1 * SECONDS_PER_DAY)))
+                self.loadLogs(true)
+            }
             
         } //End BG
         print("Called loadLogs()")

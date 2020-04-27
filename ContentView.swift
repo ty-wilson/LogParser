@@ -50,9 +50,10 @@ struct ContentView: View {
                             .foregroundColor(Color.uiRed)
                         Toggle("WARN", isOn: $filter.showWarns)
                             .foregroundColor(.yellow)
+                        Toggle("Search traces", isOn: $filter.includeTrace)
 
                         //Date picker and reload button
-                        datePickerView().environmentObject(data)
+                        datePickerView(numberDaysToLoad: Int(data.startingDate.d.distance(to: Date())) / SECONDS_PER_DAY).environmentObject(data)
                     }
                     
                     Button(action: {
@@ -65,16 +66,27 @@ struct ContentView: View {
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .toggleStyle(SwitchToggleStyle())
+                    .onHover(perform: {val in
+                        if(NSCursor.current == NSCursor.arrow){
+                            NSCursor.pointingHand.set()
+                        } else if(NSCursor.current == NSCursor.pointingHand) {
+                            NSCursor.arrow.set()
+                        }
+                    })
+                    .padding(1)
+                    
                         
                     Text(String(data.getNumFilteredLogs(filter: filter)) + " logs")
                     .foregroundColor(.white)
                     .bold()
                 }
                 .padding([.top, .leading, .trailing], 8)
+                .onHover(perform: {_ in
+                    NSCursor.arrow.set()
+                })
                 
                 //Log View
-                LogView(logArray: data.getLogs(filter: filter)!)
+                LogView(logArray: data.getFilteredLogs(filter: filter))
                     .background(Color.primaryColor)
                     .onAppear() {
                         print("Setting window... \(self.window.screen!.visibleFrame)")

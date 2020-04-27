@@ -10,7 +10,7 @@ import SwiftUI
 
 struct datePickerView: View {
     @EnvironmentObject var data: Data
-    @State var numberDaysToLoad = 0
+    @State var numberDaysToLoad: Int
     
     var limitingDate: Date {
         return Date(timeIntervalSinceNow: Double(-1 * numberDaysToLoad) * TimeInterval(SECONDS_PER_DAY))
@@ -28,7 +28,7 @@ struct datePickerView: View {
             Picker(selection: $numberDaysToLoad, label: EmptyView()) {
                 ForEach(minimumNumberOfDaysAgo...maximumNumberOfDaysAgo) {
                     //Highlight the currently filtered date
-                    if(self.data.loadingDatesData.convertToShortDate(self.getDateFromToday(minus: $0)).d
+                    if (self.data.loadingDatesData.convertToShortDate(self.getDateFromToday(minus: $0)).d
                         .compare(self.data.startingDate.d) == .orderedSame) {
                         Text(self.generatePickerTextFor(daysAgo: $0))
                             .foregroundColor(Color.uiGreen)
@@ -39,21 +39,13 @@ struct datePickerView: View {
             }
             .fixedSize()
             .disabled(data.status != .loaded)
-
-            //Allow save if date has been changed and data is finished loading
-            if(data.status == .loaded &&
-                self.data.loadingDatesData.convertToShortDate(self
-                .getDateFromToday(minus: numberDaysToLoad)).d
-                .compare(self.data.startingDate.d) != .orderedSame) {
-                Button ("Save") {
+            .onReceive([self.numberDaysToLoad].publisher.first()) { (value) in
+                if (self.data.loadingDatesData.convertToShortDate(self.getDateFromToday(minus: self.numberDaysToLoad)).d
+                    .compare(self.data.startingDate.d) != .orderedSame) {
                     self.data.startingDate = self.data.loadingDatesData.convertToShortDate(self.limitingDate)
                     self.data.loadLogs()
-                    }
+                }
             }
-        }
-        .onAppear() {
-            //Set picker to currently loaded starting date
-            self.numberDaysToLoad = Int(self.data.startingDate.d.distance(to: Date())) / SECONDS_PER_DAY
         }
     }
     
@@ -63,7 +55,7 @@ struct datePickerView: View {
     // 33 days ago (2020-01-01 | +XXXX logs = YYYY)
     func generatePickerTextFor(daysAgo: Int) -> String {
         var text = String()
-        if(daysAgo == 0) {
+        if (daysAgo == 0) {
             text.append("Today: " + dateToString(Date()) + " | " + Data.getFormattedNumber(self.data.loadingDatesData.occurancesAt(Date())) + " logs")
         } else {
             //Date

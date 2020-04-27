@@ -15,7 +15,6 @@ struct LogView: View {
     var body: some View {
         VStack {
             HStack {
-                
                 Spacer()
                 
                 //Scroll View of Line Views

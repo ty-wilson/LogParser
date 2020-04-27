@@ -13,14 +13,14 @@ struct LineView: View {
     static let DETAIL_LINE_SIZE = 25 //Display size per detail log line
     static let MIN_DETAIL_LINES = 4 //Min number of lines printed under details
         
-    public let log: Log
+    @EnvironmentObject var data: Data
+    @State var log: Log
 
-    @State var details = false
     @State var selectedLineNum: Int?
     let detailsMinHeight: CGFloat
     
     var arrowText: String {
-        switch details {
+        switch log.showDetails {
             case true: return " Ｖ "
             case false: return " ＞ "
         }
@@ -31,11 +31,20 @@ struct LineView: View {
             //Basic View
             HStack(alignment: .top) {
                 Button(arrowText, action: {
-                    self.details = !self.details
+                    self.log.showDetails = !self.log.showDetails
+                    self.data.toggleShowDetails(self.log)
                 }).foregroundColor(Color.uiBlue)
                 .buttonStyle(PlainButtonStyle())
                 .overlay(Circle().stroke(Color.uiBlue, lineWidth: 1))
                     .shadow(color: Color.white, radius: 1)
+                .onHover(perform: {val in
+                    if(NSCursor.current == NSCursor.arrow){
+                        NSCursor.pointingHand.set()
+                    } else if(NSCursor.current == NSCursor.pointingHand) {
+                        NSCursor.arrow.set()
+                    }
+                })
+                .padding(1)
 
                 Text(String(log.lineNum.count) + "x")
                     .foregroundColor(Color.secondary)
@@ -57,12 +66,9 @@ struct LineView: View {
                 }
             }
             .frame(alignment: .center)
-            .onTapGesture {
-                self.details = !self.details
-            }
             
             //Detailed View
-            if(details) {
+            if(log.showDetails) {
                 HStack(alignment: .top) {
                     //Line | Date | Thread
                     VStack(alignment: .leading) {
@@ -76,7 +82,7 @@ struct LineView: View {
                                     Text("line \(num):")
                                         .foregroundColor(.secondary)
                                 }
-                                Text("\((self.log.dateAtLine[num]!)!)")
+                                Text("\(Data.dateToLongTextFormatter.string(from: self.log.dateAtLine[num]!!))")
                                     .foregroundColor(Color.uiGreen)
                                 Text("[\(self.log.threadAtLine[num]!)]")
                                     .foregroundColor(Color.uiPurple)
@@ -89,10 +95,39 @@ struct LineView: View {
                     //Text: Combine text with other text
                     if(selectedLineNum != nil) {
                         VStack(alignment: .leading) {
-                            Text("line \(selectedLineNum!)")
-                                .foregroundColor(.secondary)
-                            Text(log.traceAtLine[selectedLineNum!]!)
+                            HStack {
+                                Text("line \(selectedLineNum!)")
+                                    .foregroundColor(.secondary)
+                                Button("Open in nano", action: {
+                                    var error: NSDictionary?
+                                    if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
+                                            if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
+                                                                                                               &error) {
+                                                //print(output.stringValue)
+                                            } else if (error != nil) {
+                                                print("error: \(String(describing: error))")
+                                            }
+                                        }
+                                    
+                                    })
+                                    .foregroundColor(.secondary)
+                                    .onHover(perform: {val in
+                                        if(NSCursor.current == NSCursor.arrow){
+                                            NSCursor.pointingHand.set()
+                                        } else if(NSCursor.current == NSCursor.pointingHand) {
+                                            NSCursor.arrow.set()
+                                        }
+                                    })
+                                    .padding(1)
+                                }
+                            
+                            resettingTextField(text: log.traceAtLine[selectedLineNum!]!,
+                                               savedText: log.traceAtLine[selectedLineNum!]!)
                                 .frame(maxWidth: 1000)
+                                //prevent edits
+                                .onReceive([self.log].publisher.first()) { (value) in
+                                    self.log = self.data.getLog(logToGet: self.log)!
+                            }
                         }
                         .padding(10)//Text padding
                         .fixedSize()
@@ -100,6 +135,20 @@ struct LineView: View {
                 }
                 .padding(.leading, 15)//Indent
             }
+        }
+    }
+}
+
+struct resettingTextField: View {
+    @State var text: String
+    let savedText: String
+    
+    var body: some View {
+        TextField("", text: $text)
+            .frame(maxWidth: 1000)
+            //prevent edits
+            .onReceive([text].publisher.first()) { (value) in
+                self.text = self.savedText
         }
     }
 }
@@ -122,8 +171,8 @@ struct LineView_Previews: PreviewProvider {
                           threadAtLine: [ 1 : "ThreadName" , 2 : "OtherThread"],
                           process: "ProcessName",
                           text: "Text Here",
-                          traceAtLine: [ 1 : "\nTrace here", 2 : "\nAnother trace here"]),
-                 details: true,
+                          traceAtLine: [ 1 : "\nTrace here", 2 : "\nAnother trace here"],
+                          showDetails: true),
                  selectedLineNum: 1, detailsMinHeight: 100)
     }
 }

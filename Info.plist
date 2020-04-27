@@ -34,5 +34,7 @@
 	<true/>
 	<key>NSSupportsSuddenTermination</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Grant access to Terminal</string>
 </dict>
 </plist>
