@@ -194,7 +194,7 @@ final class Data: ObservableObject {
     
     func toggleShowDetails(_ logToChange: Log) {
         for index in 0...logArray.count - 1 {
-            if(logArray[index].text == logToChange.text) {
+            if(logArray[index].text == logToChange.text && logArray[index].title == logToChange.title) {
                 logArray[index].toggleDetails()
             }
         }
@@ -219,7 +219,7 @@ final class Data: ObservableObject {
         var foundLog: Log?
         
         for index in 0...logArray.count - 1 {
-            if(logArray[index].text == logToGet.text) {
+            if(logArray[index].text == logToGet.text && logArray[index].title == logToGet.title) {
                 foundLog = logArray[index]
             }
         }

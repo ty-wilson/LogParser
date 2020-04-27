@@ -150,6 +150,7 @@ struct resettingTextField: View {
             .onReceive([text].publisher.first()) { (value) in
                 self.text = self.savedText
         }
+            .background(Color.primaryColor)
     }
 }
 
