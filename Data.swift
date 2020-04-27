@@ -235,14 +235,35 @@ final class Data: ObservableObject {
     
     func getNumFilteredLogs(filter: Filter) -> Int {
         var num = 0
+        var logIndex = 0
         
-        if(logArray.count > 0) {
-            for log in logArray {
-                if(((log.title == .ERROR) && filter.showErrors) ||
-                    ((log.title == .WARN) && filter.showWarns)) {
-                    num += 1
+        while(logArray.count > logIndex) {
+            
+            //Compare with filter
+            if(filter.includeTrace && filter.searchText != ""){
+                var found = false
+                
+                for trace in logArray[logIndex].traceAtLine.values {
+                   if(trace.contains(filter.searchText)) {
+                       found = true
+                   }
+               }
+                if(!found) {
+                    logIndex += 1
+                    continue
                 }
+            } else if(filter.searchText != "" && !logArray[logIndex].text.contains(filter.searchText)){
+                logIndex += 1
+                continue
             }
+            
+            
+            if(filter.showErrors && logArray[logIndex].title == .ERROR ||
+                filter.showWarns && logArray[logIndex].title == .WARN) {
+                num += 1
+            }
+            
+            logIndex += 1
         }
         
         return num
