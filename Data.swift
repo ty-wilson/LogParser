@@ -200,31 +200,8 @@ final class Data: ObservableObject {
         }
     }
     
-    func fileToText() -> String {
-        var text = ""
-        
-        for line in file!.lines {
-            text.append(line)
-        }
-        
-        return text
-    }
-    
     func getFilePath() -> String {
         return file!.getPath()
-    }
-    
-    //for resetting the text on edit
-    func getLog(logToGet: Log) -> Log? {
-        var foundLog: Log?
-        
-        for index in 0...logArray.count - 1 {
-            if(logArray[index].text == logToGet.text && logArray[index].title == logToGet.title) {
-                foundLog = logArray[index]
-            }
-        }
-        
-        return foundLog
     }
     
     /*Get*/
@@ -336,16 +313,15 @@ final class Data: ObservableObject {
     private func loadDates() {
         //Enter background thread
         BG {
-
             UI {
                 self.status = .loading_dates
             }
             
             //Parsing
-            for fileIndex in 0...self.file!.lines.count - 1{
+            for fileIndex in 0...self.file!.lines.count - 1 {
                 
                 //Update status every 99? lines
-                if(fileIndex % 99 == 0) {
+                if (fileIndex % 99 == 0) {
                     UI {
                         self.message = "line: \(Data.getFormattedNumber(fileIndex))/\(Data.getFormattedNumber(self.file!.lines.count)) | unique dates: \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
                     }//End UI
@@ -354,12 +330,12 @@ final class Data: ObservableObject {
                 let seperator = self.file!.lines[fileIndex].firstIndex(of: " ")
                 
                 //Find date
-                if(seperator != nil)
+                if (seperator != nil)
                 {
                     let dateText = self.file!.lines[fileIndex][...seperator!].dropLast()
                     let date = self.textToShortDateFormatter.date(from: String(dateText))
                     
-                    if(date != nil)
+                    if (date != nil)
                     {
                         let shortDate = ShortDate(d: date!)
                         //Add date if new
@@ -446,18 +422,14 @@ final class Data: ObservableObject {
                 }
                 lineChunks = lineChunks.filter({ $0 != ""})
                 
-                //Check for discardable lines:
-                //Discard if we did not find 4 chunks at start of line
-                //Discard if not Error or Warn
+                //Discard if it is a log but not not Error or Warn
                 if(lineChunks.count == 4 && !(lineChunks[1] == "ERROR" || lineChunks[1] == "WARN")) {
-                    //print("Discarding line \(fileIndex):\n\(file.lines[fileIndex])")
                     discarded += 1
                     continue
                 }
                 
-                //If not formattable or discardable, append to last the most recently found log's current trace
+                //If not a log, append to last the most recently found log's current trace
                 if(lineChunks.count != 4) {
-                    //print("Appending to \(lastLogIndex)")
                     if(newLogArray.count != 0) {
                         newLogArray[lastLogIndex].traceAtLine[newLogArray[lastLogIndex].lineNum.last!]?.append("\n\(self.file!.lines[fileIndex])")
                         appended += 1

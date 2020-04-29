@@ -23,7 +23,7 @@ func loadingView(_ data: Data, filter: Binding<Filter>) -> AnyView {
     }
 }
 
-struct waitingView: View {
+struct waitingView: View, DropDelegate {
     @EnvironmentObject var data: Data
     
     var body: some View {
@@ -41,43 +41,58 @@ struct waitingView: View {
                 
                 Spacer()
                 
-                Text("")
-                Button("Select File...", action: {
-                    UI {
-                        let path: String?
-                        
-                        let openPanel = NSOpenPanel()
-                        openPanel.makeKeyAndOrderFront(nil)
-                        openPanel.level = .modalPanel
-                        
-                        let response = openPanel.runModal()
-                        
-                        if ( response == NSApplication.ModalResponse.OK )
-                        {
-                            path = openPanel.url!.path
-                        }
-                        else {
-                            path = nil
-                        }
+                HStack {
+                    Text("Drag and drop a file, or")
+                        .foregroundColor(.secondary)
+                    Button("Select File...", action: {
+                        UI {
+                            let path: String?
                             
-                        if(path != nil) {
-                            self.data.loadFile(filePath: path!)
+                            let openPanel = NSOpenPanel()
+                            openPanel.makeKeyAndOrderFront(nil)
+                            openPanel.level = .modalPanel
+                            
+                            let response = openPanel.runModal()
+                            
+                            if ( response == NSApplication.ModalResponse.OK )
+                            {
+                                path = openPanel.url!.path
+                            }
+                            else {
+                                path = nil
+                            }
+                                
+                            if(path != nil) {
+                                self.data.loadFile(filePath: path!)
+                            }
                         }
-                    }
-                }).buttonStyle(BorderedButtonStyle())
-                .onHover(perform: {val in
-                    if(NSCursor.current == NSCursor.arrow){
-                        NSCursor.pointingHand.set()
-                    } else if(NSCursor.current == NSCursor.pointingHand) {
-                        NSCursor.arrow.set()
-                    }
-                })
-                .padding(1)
+                    })
+                    .onHover(perform: {val in
+                        if(val){
+                            NSCursor.pointingHand.set()
+                        } else {
+                            NSCursor.arrow.set()
+                        }
+                    })
+                }
                 
                 Spacer()
             }
             Spacer()
+        }.onDrop(of: [(kUTTypeFileURL as String)], delegate: self)
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+
+        guard let itemProvider = info.itemProviders(for: [(kUTTypeFileURL as String)]).first else { return false }
+
+        itemProvider.loadItem(forTypeIdentifier: (kUTTypeFileURL as String), options: nil) {item, error in
+            guard let thisData = item as? Foundation.Data, let url = URL(dataRepresentation: thisData, relativeTo: nil) else { return }
+            
+            self.data.loadFile(filePath: url.path)
         }
+
+        return true
     }
 }
 
@@ -128,8 +143,15 @@ struct HLoadingView: View {
     
     var body: some View {
         HStack {
-            Text("\(data.status.toString()) ")
-            Text("\(data.message ?? "no message")")
+            if(self.data.status == .reloading) {
+                
+                    Text("\(data.status.toString()) ")
+                    Text("\(data.message ?? "no message")")
+            } else {
+                EmptyView()
+            }
         }
+        .background(Color.primaryColor)
+        .padding(5)
     }
 }

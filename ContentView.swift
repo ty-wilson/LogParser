@@ -14,6 +14,7 @@ extension Color {
     static let primaryColor = Color(NSColor(named: "PrimaryColor")!)
     static let uiRed = Color(NSColor(named: "UIRed")!)
     static let uiBlue = Color(NSColor(named: "UIBlue")!)
+    static let uiDarkBlue = Color(NSColor(named: "UIDarkBlue")!)
     static let uiGreen = Color(NSColor(named: "UIGreen")!)
     static let uiPurple = Color(NSColor(named: "UIPurple")!)
 }
@@ -24,7 +25,7 @@ struct ContentView: View {
         showErrors: true,
         showWarns: false,
         searchText: "",
-        includeTrace: false)
+        includeTrace: true)
     @State var searchSettingsOn = false
     
     let window: NSWindow
@@ -35,16 +36,13 @@ struct ContentView: View {
             if(data.status != .loaded && data.status != .reloading) {
                 loadingView(data, filter: $filter)
             } else {
+                //Top bar
                 HStack {
                     //Filters
                     TextField("🔎 Search", text: $filter.searchText)
                     
                     //Search settings
                     if(searchSettingsOn) {
-                        //Reloading status
-                        if(data.status == .reloading) {
-                            HLoadingView().environmentObject(data)
-                        }
                         
                         Toggle("ERROR", isOn: $filter.showErrors)
                             .foregroundColor(Color.uiRed)
@@ -67,13 +65,12 @@ struct ContentView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .onHover(perform: {val in
-                        if(NSCursor.current == NSCursor.arrow){
+                        if(val){
                             NSCursor.pointingHand.set()
-                        } else if(NSCursor.current == NSCursor.pointingHand) {
+                        } else {
                             NSCursor.arrow.set()
                         }
                     })
-                    .padding(1)
                     
                         
                     Text(String(data.getNumFilteredLogs(filter: filter)) + " logs")
@@ -81,9 +78,7 @@ struct ContentView: View {
                     .bold()
                 }
                 .padding([.top, .leading, .trailing], 8)
-                .onHover(perform: {_ in
-                    NSCursor.arrow.set()
-                })
+                .frame(minWidth: 650)
                 
                 //Log View
                 LogView(logArray: data.getFilteredLogs(filter: filter))
@@ -95,6 +90,7 @@ struct ContentView: View {
                         //Set to resizable
                         self.window.styleMask = [.resizable, .titled, .closable, .miniaturizable, .fullSizeContentView]
                     }
+                .overlay(HLoadingView().environmentObject(data), alignment: .topTrailing)
             }
         }
         .onAppear() {

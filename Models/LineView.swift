@@ -19,86 +19,98 @@ struct LineView: View {
     @State var selectedLineNum: Int?
     let detailsMinHeight: CGFloat
     
-    var arrowText: String {
+    var opacity: Double {
         switch log.showDetails {
-            case true: return " Ｖ "
-            case false: return " ＞ "
+        case true:
+            return 0.6
+        default:
+            return 1.0
+        }
+    }
+    
+    var dateRangeText: String {
+        if(log.lineNum.count > 1) {
+            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
+                "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))"
+        } else {
+            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))"
         }
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack {
             //Basic View
-            HStack(alignment: .top) {
-                Button(arrowText, action: {
-                    self.log.showDetails = !self.log.showDetails
-                    self.data.toggleShowDetails(self.log)
-                }).foregroundColor(Color.uiBlue)
-                .buttonStyle(PlainButtonStyle())
-                .overlay(Circle().stroke(Color.uiBlue, lineWidth: 1))
-                    .shadow(color: Color.white, radius: 1)
-                .onHover(perform: {val in
-                    if(NSCursor.current == NSCursor.arrow){
+            HStack(alignment: .center) {
+                HStack {
+                    Text(String(log.lineNum.count) + "x")
+                        .foregroundColor(Color.secondary)
+                    
+                    colorTitle(title: log.title)
+                    Text(log.process).foregroundColor(Color.uiGreen)
+                    Text(log.text).foregroundColor(.white).lineLimit(1)
+                    
+                    Spacer()
+                }.onHover(perform: {val in
+                    if(val){
                         NSCursor.pointingHand.set()
-                    } else if(NSCursor.current == NSCursor.pointingHand) {
+                    } else {
                         NSCursor.arrow.set()
                     }
                 })
-                .padding(1)
-
-                Text(String(log.lineNum.count) + "x")
-                    .foregroundColor(Color.secondary)
-                
-                colorTitle(title: log.title)
-                Text(log.process).foregroundColor(Color.uiGreen)
-                Text(log.text).foregroundColor(.white).lineLimit(1)
-                
-                Spacer()
-                
-                //Date Range
-                if(log.lineNum.count > 1) {
-                    Text("\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
-                        "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))")
-                        .foregroundColor(Color.uiBlue)
-                } else {
-                    Text ("\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))")
-                        .foregroundColor(Color.uiBlue)
+                .onTapGesture {
+                        self.log.showDetails = !self.log.showDetails
+                        self.data.toggleShowDetails(self.log)
                 }
+                
+                Button(dateRangeText + "  ⓘ", action: {
+                    self.log.showDetails = !self.log.showDetails
+                    self.data.toggleShowDetails(self.log)
+                }).foregroundColor(.uiBlue)
+                .buttonStyle(PlainButtonStyle())
+                .onHover(perform: {val in
+                    if(val){
+                        NSCursor.pointingHand.set()
+                    } else {
+                        NSCursor.arrow.set()
+                    }
+                })
             }
-            .frame(alignment: .center)
+            .padding(.trailing, 5)
+            .opacity(opacity)
             
             //Detailed View
             if(log.showDetails) {
-                HStack(alignment: .top) {
+                HSplitView() {
                     //Line | Date | Thread
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .trailing) {
                         List (log.lineNum, selection: $selectedLineNum) { num in
                             HStack {
                                 //Add line, date and thread
-                                if(num == self.selectedLineNum) {
-                                    Text("line \(num):")
-                                        .foregroundColor(.black)
-                                } else {
-                                    Text("line \(num):")
-                                        .foregroundColor(.secondary)
-                                }
+                                
+                                Text("line \(num):")
+                                .foregroundColor(.secondary)
+                                .padding(2)
                                 Text("\(Data.dateToLongTextFormatter.string(from: self.log.dateAtLine[num]!!))")
-                                    .foregroundColor(Color.uiGreen)
+                                    .foregroundColor(Color.uiBlue)
                                 Text("[\(self.log.threadAtLine[num]!)]")
                                     .foregroundColor(Color.uiPurple)
-                            }.padding(3)//Each line padding
+                            }
                         }
-                        .frame(width: 600)
+                        .frame(minHeight: detailsMinHeight)
                     }.padding([.top, .bottom], 10)
-                    .frame(minHeight: detailsMinHeight)
+                    .frame(idealWidth: 650)
                     
                     //Text: Combine text with other text
                     if(selectedLineNum != nil) {
-                        VStack(alignment: .leading) {
-                            HStack {
-                                Text("line \(selectedLineNum!)")
-                                    .foregroundColor(.secondary)
-                                Button("Open in nano", action: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                
+                                Text("Trace:").bold().foregroundColor(Color.secondary)
+                                resettingTextField(text: log.traceAtLine[selectedLineNum!]!,
+                                                   savedText: log.traceAtLine[selectedLineNum!]!)
+                                
+                                //Button
+                                    Button("Open in Terminal", action: {
                                     var error: NSDictionary?
                                     if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
                                             if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
@@ -110,30 +122,33 @@ struct LineView: View {
                                         }
                                     
                                     })
-                                    .foregroundColor(.secondary)
                                     .onHover(perform: {val in
-                                        if(NSCursor.current == NSCursor.arrow){
+                                        if(val){
                                             NSCursor.pointingHand.set()
-                                        } else if(NSCursor.current == NSCursor.pointingHand) {
+                                        } else {
                                             NSCursor.arrow.set()
                                         }
                                     })
-                                    .padding(1)
-                                }
-                            
-                            resettingTextField(text: log.traceAtLine[selectedLineNum!]!,
-                                               savedText: log.traceAtLine[selectedLineNum!]!)
-                                .frame(maxWidth: 1000)
-                                //prevent edits
-                                .onReceive([self.log].publisher.first()) { (value) in
-                                    self.log = self.data.getLog(logToGet: self.log)!
+                                
+                                Spacer()
                             }
+                            .padding(.leading, 5)
+                            Spacer()
                         }
-                        .padding(10)//Text padding
-                        .fixedSize()
+                        .frame(idealWidth: 900)
+                    } else {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                
+                                resettingTextField(text: "",
+                                                   savedText: "")
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                        .frame(idealWidth: 900)
                     }
                 }
-                .padding(.leading, 15)//Indent
             }
         }
     }
