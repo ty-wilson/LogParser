@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2330AFC124131DF9008374DA"
-               BuildableName = "LogParser.app"
-               BlueprintName = "LogParser"
-               ReferencedContainer = "container:LogParser.xcodeproj">
+               BuildableName = "Log Parser.app"
+               BlueprintName = "Log Parser"
+               ReferencedContainer = "container:Log Parser.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2330AFC124131DF9008374DA"
-            BuildableName = "LogParser.app"
-            BlueprintName = "LogParser"
-            ReferencedContainer = "container:LogParser.xcodeproj">
+            BuildableName = "Log Parser.app"
+            BlueprintName = "Log Parser"
+            ReferencedContainer = "container:Log Parser.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2330AFC124131DF9008374DA"
-            BuildableName = "LogParser.app"
-            BlueprintName = "LogParser"
-            ReferencedContainer = "container:LogParser.xcodeproj">
+            BuildableName = "Log Parser.app"
+            BlueprintName = "Log Parser"
+            ReferencedContainer = "container:Log Parser.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

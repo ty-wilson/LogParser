@@ -106,7 +106,6 @@ struct LineView: View {
                                     .foregroundColor(Color.uiPurple)
                             }
                         }
-                        .frame(minHeight: detailsMinHeight)
                     }.padding([.top, .bottom], 10)
                     .frame(minWidth: 300, idealWidth: 455)
                     
@@ -114,62 +113,62 @@ struct LineView: View {
                     if(selectedLineNum != nil) {
                         HStack {
                             VStack(alignment: .leading) {
+                                HStack {
+                                    Text("Trace:").bold().foregroundColor(Color.secondary)
+                                    Button("Open in Terminal", action: {
+                                    var error: NSDictionary?
+                                    if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
+                                            if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
+                                                                                                               &error) {
+                                                //print(output.stringValue)
+                                            } else if (error != nil) {
+                                                print("error: \(String(describing: error))")
+                                            }
+                                        }
+                                    
+                                    })
+                                    .onHover(perform: {val in
+                                        if(val){
+                                            NSCursor.pointingHand.set()
+                                        } else {
+                                            NSCursor.arrow.set()
+                                        }
+                                    })
+                                    
+                                    Button("Copy to clipboard", action: {
+                                        let pasteboard = NSPasteboard.general
+                                        pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
+                                        pasteboard.setString(self.log.traceAtLine[self.selectedLineNum!]!, forType: NSPasteboard.PasteboardType.string)
+                                        self.hasCopied = true
+                                    })
+                                    .onHover(perform: {val in
+                                        if(val){
+                                            NSCursor.pointingHand.set()
+                                        } else {
+                                            NSCursor.arrow.set()
+                                        }
+                                    })
+                                    
+                                    Spacer()
+                                }
+                                .frame(minWidth: 350)
                                 
-                                Text("Trace:").bold().foregroundColor(Color.secondary)
                                 if (filter.ignoreCase) {
                                     StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
                                         .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
+                                        .frame(maxWidth: 900)
+                                        .fixedSize()//magic to make the textbox fit
                                 } else {
                                     StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
                                         .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
                                 }
                                 
-                                
                                 Spacer()
                             }
-                            .padding(.leading, 5)
-                            .frame(minWidth: 175)
                             
                             Spacer()
-                            
-                            //Buttons
-                            VStack {
-                                Button("Open in Terminal", action: {
-                                var error: NSDictionary?
-                                if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
-                                        if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
-                                                                                                           &error) {
-                                            //print(output.stringValue)
-                                        } else if (error != nil) {
-                                            print("error: \(String(describing: error))")
-                                        }
-                                    }
-                                
-                                })
-                                .onHover(perform: {val in
-                                    if(val){
-                                        NSCursor.pointingHand.set()
-                                    } else {
-                                        NSCursor.arrow.set()
-                                    }
-                                })
-                                
-                                Button("Copy to clipboard", action: {
-                                    let pasteboard = NSPasteboard.general
-                                    pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-                                    pasteboard.setString(self.log.traceAtLine[self.selectedLineNum!]!, forType: NSPasteboard.PasteboardType.string)
-                                    self.hasCopied = true
-                                })
-                                .onHover(perform: {val in
-                                    if(val){
-                                        NSCursor.pointingHand.set()
-                                    } else {
-                                        NSCursor.arrow.set()
-                                    }
-                                })
-                            }
-                        }
-                        .frame(idealWidth: 900)
+                        }.padding(.leading, 10)
+                        .frame(idealWidth: 900)//more magic
                     } else {
                         HStack {
                             VStack(alignment: .leading) {
@@ -181,7 +180,8 @@ struct LineView: View {
                         }
                         .frame(idealWidth: 900)
                     }
-                }
+                }.frame(minHeight: detailsMinHeight)
+                .fixedSize(horizontal: false, vertical: true)//magic
             }
         }
     }

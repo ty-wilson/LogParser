@@ -136,7 +136,7 @@ public struct HLoadingView: View {
         HStack {
             if(self.data.status == .reloading) {
                 Text("\(data.status.toString())")
-                Text(String(format: "%.2f", data.percLogsLoaded) + " | logs: \(data.numLogsLoaded)")
+                Text("%" + String(format: "%.2f", data.percLogsLoaded) + " | logs: \(data.numLogsLoaded)")
             } else {
                 EmptyView()
             }

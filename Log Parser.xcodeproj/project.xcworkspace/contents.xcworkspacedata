@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:LogParser.xcodeproj">
+      location = "self:/Users/tyler.wilson/Desktop/LogParser/Log Parser.xcodeproj">
    </FileRef>
 </Workspace>

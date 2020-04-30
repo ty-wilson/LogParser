@@ -428,83 +428,114 @@ final class Data: ObservableObject {
                     }//End UI
                 }
                 
-                //Split into info and description
-                let splitLine = self.file!.lines[fileIndex].components(separatedBy: " - ")
-                
-                //Break out info chunks from first half of split
-                var lineChunks = splitLine[0].components(separatedBy: ["[", "]"])
-                
-                //Remove whitespace and empty chunks
-                for chunksIndex in 0...lineChunks.count - 1 {
-                    lineChunks[chunksIndex] = lineChunks[chunksIndex].trimmingCharacters(in: .whitespaces)
-                }
-                lineChunks = lineChunks.filter({ $0 != ""})
-                
-                //Discard if it is a log but not not Error or Warn
-                if(lineChunks.count == 4 && !(lineChunks[1] == "ERROR" || lineChunks[1] == "WARN")) {
-                    discarded += 1
-                    continue
-                }
-                
-                //If not a log, append to last the most recently found log's current trace
-                if(lineChunks.count != 4) {
-                    if(newLogArray.count != 0) {
-                        newLogArray[lastLogIndex].traceAtLine[newLogArray[lastLogIndex].lineNum.last!]?.append("\n\(self.file!.lines[fileIndex])")
-                        appended += 1
-                    }
-                    continue
-                }
-                
-                //search logs for the text of the new log and add it
-                var wasFound = false
-                if (newLogArray.count != 0) {
-                    for logIndex in 0...newLogArray.count - 1 {
+                //new//
+                //Check date
+                let dateSeperator = self.file!.lines[fileIndex].firstIndex(of: "[")
+                if(dateSeperator != nil && dateSeperator != self.file!.lines[fileIndex].startIndex) {
+                    let dateChunk = self.file!.lines[fileIndex][...(self.file!.lines[fileIndex].index(before: dateSeperator!) )]
+                    let date = self.textToLongDateFormatter.date(from: String(dateChunk))
+                    
+                    //If date was found, check title
+                    if(date != nil) {
+                        var titleSeperator = self.file!.lines[fileIndex][dateSeperator!...].firstIndex(of: "]")
                         
-                        //Remove numbers from text before comparing
-                        if (newLogArray[logIndex].text.components(separatedBy: CharacterSet.decimalDigits).joined() == splitLine[1].components(separatedBy: CharacterSet.decimalDigits).joined() &&
-                            newLogArray[logIndex].process == lineChunks[3]) {
-                            wasFound = true
-                            lastLogIndex = logIndex
+                        if(titleSeperator != nil) {
+                            let titleChunk = self.file!.lines[fileIndex][dateSeperator!...titleSeperator!]
+                                .dropFirst().dropLast()
+                                .trimmingCharacters(in: .whitespaces)
                             
-                            //Add data to found log
-                            
-                            //Add line number
-                            newLogArray[logIndex].lineNum.append(fileIndex)
-                            //Add date at line
-                            let date = self.textToLongDateFormatter.date(from: String(lineChunks[0]))
-                            if(date != nil) {
-                                newLogArray[logIndex].dateAtLine.updateValue(date, forKey: fileIndex)
-                            } else {
-                                print("Discarding date: " + lineChunks[0])
+                            //skip Info
+                            if(titleChunk == "INFO") {
+                                discarded += 1
+                                continue
                             }
-                            //Add thread at line
-                            newLogArray[logIndex].threadAtLine.updateValue(lineChunks[2], forKey: fileIndex)
-                            //Start trace at line
-                            newLogArray[logIndex].traceAtLine.updateValue(splitLine[1], forKey: fileIndex)
                             
-                            continue
-                                                                                
-                            //data check
-                            //if(log[logIndex].title != stringToTitle(lineChunks[1])){print("Title mismatch from line \(fileIndex): \(log[logIndex].title) vs \(lineChunks[1])")}
-                            //if(log[logIndex].process != lineChunks[3]) {print("Process mismatch from line \(fileIndex) : \(lineChunks[3]) vs \(log[logIndex].process)")}
+                            //if title was found, check thread and process
+                            if(titleChunk == "ERROR" || titleChunk == "WARN") {
+                                titleSeperator = self.file!.lines[fileIndex].index(after: titleSeperator!)
+                                let threadSeperator1 = self.file!.lines[fileIndex][titleSeperator!...].firstIndex(of: "[")
+                                var threadSeperator2 = self.file!.lines[fileIndex][titleSeperator!...].firstIndex(of: "]")
+                                
+                                if(threadSeperator1 != nil && threadSeperator2 != nil) {
+                                    let threadChunk = self.file!.lines[fileIndex][threadSeperator1!...threadSeperator2!]
+                                        .dropFirst().dropLast()
+                                        .trimmingCharacters(in: .whitespaces)
+                                    
+                                    threadSeperator2 = self.file!.lines[fileIndex].index(after: threadSeperator2!)
+                                    let processSeperator1 = self.file!.lines[fileIndex][threadSeperator2!...].firstIndex(of: "[")
+                                    let processSeperator2 = self.file!.lines[fileIndex][threadSeperator2!...].firstIndex(of: "]")
+                                    
+                                    if(processSeperator1 != nil && processSeperator2 != nil) {
+                                        let processChunk = self.file!.lines[fileIndex][processSeperator1!...processSeperator2!]
+                                            .dropFirst().dropLast()
+                                            .trimmingCharacters(in: .whitespaces)
+                                        
+                                        let textChunk = String(self.file!.lines[fileIndex][processSeperator2!...]
+                                            .dropFirst())
+                                        
+                                        //search logs for the text of the new log and add it
+                                        var wasFound = false
+                                        if (newLogArray.count != 0) {
+                                            for logIndex in 0...newLogArray.count - 1 {
+                                                
+                                                //Remove numbers from text before comparing
+                                                if (newLogArray[logIndex].text.components(separatedBy: CharacterSet.decimalDigits).joined() ==
+                                                    textChunk.components(separatedBy: CharacterSet.decimalDigits).joined() &&
+                                                    newLogArray[logIndex].process == processChunk &&
+                                                    newLogArray[logIndex].title.rawValue == titleChunk) {
+                                                    
+                                                    wasFound = true
+                                                    lastLogIndex = logIndex
+                                                    
+                                                    //Add data to found log
+                                                    
+                                                    //Add line number
+                                                    newLogArray[logIndex].lineNum.append(fileIndex)
+                                                    //Add date at line
+                                                    newLogArray[logIndex].dateAtLine.updateValue(date, forKey: fileIndex)
+                                                    //Add thread at line
+                                                    newLogArray[logIndex].threadAtLine.updateValue(threadChunk, forKey: fileIndex)
+                                                    //Start trace at line
+                                                    newLogArray[logIndex].traceAtLine.updateValue(textChunk, forKey: fileIndex)
+                                                    
+                                                    appended += 1
+                                                                                                        
+                                                    //data check
+                                                    //if(log[logIndex].process != lineChunks[3]) {print("Process mismatch from line \(fileIndex) : \(lineChunks[3]) vs \(log[logIndex].process)")}
+                                                }
+                                            }
+                                        }
+                                            
+                                        if(!wasFound) {
+                                            let newLogRecord = Log(lineNum: [fileIndex],
+                                                             dateAtLine: [fileIndex : date],
+                                                             title: Data.stringToTitle(titleChunk),
+                                                             threadAtLine: [fileIndex : threadChunk],
+                                                             process: processChunk,
+                                                             text: textChunk,
+                                                             traceAtLine: [fileIndex : textChunk],
+                                                             showDetails: false)
+                                            
+                                            lastLogIndex = newLogArray.count
+                                            //Add new log data
+                                            newLogArray.append(newLogRecord)
+                                            continue
+                                        } else {
+                                            continue
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                    
-                if(!wasFound) {
-                    let newLogRecord = Log(lineNum: [fileIndex],
-                                     dateAtLine: [fileIndex : self.textToLongDateFormatter.date(from: lineChunks[0])],
-                                     title: Data.stringToTitle(lineChunks[1]),
-                                     threadAtLine: [fileIndex : lineChunks[2]],
-                                     process: lineChunks[3],
-                                     text: splitLine[1],
-                                     traceAtLine: [fileIndex : splitLine[1]],
-                                     showDetails: false)
-                    
-                    lastLogIndex = newLogArray.count
-                    //Add new log data
-                    newLogArray.append(newLogRecord)
+                
+                //append to previous trace instead
+                if(newLogArray.count != 0) {
+                    newLogArray[lastLogIndex].traceAtLine[newLogArray[lastLogIndex].lineNum.last!]?.append("\n\(self.file!.lines[fileIndex])")
+                    appended += 1
                 }
+                continue
             }
             //End Parsing
             
