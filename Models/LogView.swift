@@ -10,6 +10,7 @@ import SwiftUI
 
 struct LogView: View {
 
+    @Binding var filter: Filter
     var logArray: [Log]
     
     var body: some View {
@@ -21,7 +22,7 @@ struct LogView: View {
                 ScrollView {
                     VStack(alignment: .leading) {
                         ForEach(logArray) { log in
-                            LineView(log: log, selectedLineNum: log.lineNum[0],
+                            LineView(filter: self.$filter, log: log, selectedLineNum: log.lineNum[0],
                                      detailsMinHeight: CGFloat(50 + min(log.lineNum.count, 35) * 25))
                             Divider()
                         }

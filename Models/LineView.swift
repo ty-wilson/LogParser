@@ -14,9 +14,11 @@ struct LineView: View {
     static let MIN_DETAIL_LINES = 4 //Min number of lines printed under details
         
     @EnvironmentObject var data: Data
+    @Binding var filter: Filter
     @State var log: Log
 
     @State var selectedLineNum: Int?
+    @State var hasCopied = false
     let detailsMinHeight: CGFloat
     
     var opacity: Double {
@@ -47,9 +49,15 @@ struct LineView: View {
                     
                     colorTitle(title: log.title)
                     Text(log.process).foregroundColor(Color.uiGreen)
-                    Text(log.text).foregroundColor(.white).lineLimit(1)
-                    
-                    Spacer()
+                    if(filter.ignoreCase) {
+                        StyledText(verbatim: log.text)
+                            .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
+                        .lineLimit(1)
+                    } else {
+                        StyledText(verbatim: log.text)
+                        .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
+                        .lineLimit(1)
+                    }
                 }.onHover(perform: {val in
                     if(val){
                         NSCursor.pointingHand.set()
@@ -62,7 +70,9 @@ struct LineView: View {
                         self.data.toggleShowDetails(self.log)
                 }
                 
-                Button(dateRangeText + "  ⓘ", action: {
+                Spacer()
+                
+                Button(dateRangeText, action: {
                     self.log.showDetails = !self.log.showDetails
                     self.data.toggleShowDetails(self.log)
                 }).foregroundColor(.uiBlue)
@@ -82,7 +92,7 @@ struct LineView: View {
             if(log.showDetails) {
                 HSplitView() {
                     //Line | Date | Thread
-                    VStack(alignment: .trailing) {
+                    VStack(alignment: .leading) {
                         List (log.lineNum, selection: $selectedLineNum) { num in
                             HStack {
                                 //Add line, date and thread
@@ -98,7 +108,7 @@ struct LineView: View {
                         }
                         .frame(minHeight: detailsMinHeight)
                     }.padding([.top, .bottom], 10)
-                    .frame(idealWidth: 650)
+                    .frame(minWidth: 300, idealWidth: 455)
                     
                     //Text: Combine text with other text
                     if(selectedLineNum != nil) {
@@ -106,42 +116,65 @@ struct LineView: View {
                             VStack(alignment: .leading) {
                                 
                                 Text("Trace:").bold().foregroundColor(Color.secondary)
-                                resettingTextField(text: log.traceAtLine[selectedLineNum!]!,
-                                                   savedText: log.traceAtLine[selectedLineNum!]!)
+                                if (filter.ignoreCase) {
+                                    StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
+                                        .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
+                                } else {
+                                    StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
+                                        .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
+                                }
                                 
-                                //Button
-                                    Button("Open in Terminal", action: {
-                                    var error: NSDictionary?
-                                    if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
-                                            if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
-                                                                                                               &error) {
-                                                //print(output.stringValue)
-                                            } else if (error != nil) {
-                                                print("error: \(String(describing: error))")
-                                            }
-                                        }
-                                    
-                                    })
-                                    .onHover(perform: {val in
-                                        if(val){
-                                            NSCursor.pointingHand.set()
-                                        } else {
-                                            NSCursor.arrow.set()
-                                        }
-                                    })
                                 
                                 Spacer()
                             }
                             .padding(.leading, 5)
+                            .frame(minWidth: 175)
+                            
                             Spacer()
+                            
+                            //Buttons
+                            VStack {
+                                Button("Open in Terminal", action: {
+                                var error: NSDictionary?
+                                if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
+                                        if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
+                                                                                                           &error) {
+                                            //print(output.stringValue)
+                                        } else if (error != nil) {
+                                            print("error: \(String(describing: error))")
+                                        }
+                                    }
+                                
+                                })
+                                .onHover(perform: {val in
+                                    if(val){
+                                        NSCursor.pointingHand.set()
+                                    } else {
+                                        NSCursor.arrow.set()
+                                    }
+                                })
+                                
+                                Button("Copy to clipboard", action: {
+                                    let pasteboard = NSPasteboard.general
+                                    pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
+                                    pasteboard.setString(self.log.traceAtLine[self.selectedLineNum!]!, forType: NSPasteboard.PasteboardType.string)
+                                    self.hasCopied = true
+                                })
+                                .onHover(perform: {val in
+                                    if(val){
+                                        NSCursor.pointingHand.set()
+                                    } else {
+                                        NSCursor.arrow.set()
+                                    }
+                                })
+                            }
                         }
                         .frame(idealWidth: 900)
                     } else {
                         HStack {
                             VStack(alignment: .leading) {
                                 
-                                resettingTextField(text: "",
-                                                   savedText: "")
+                                resettingTextField(verbatim: "")
                                 Spacer()
                             }
                             Spacer()
@@ -155,17 +188,21 @@ struct LineView: View {
 }
 
 struct resettingTextField: View {
-    @State var text: String
-    let savedText: String
+    @State var verbatim: String
+    @State var saved: String = ""
     
     var body: some View {
-        TextField("", text: $text)
+        
+        TextField("", text: $verbatim)
             .frame(maxWidth: 1000)
             //prevent edits
-            .onReceive([text].publisher.first()) { (value) in
-                self.text = self.savedText
+            .onReceive([verbatim].publisher.first()) { (value) in
+                self.verbatim = self.saved
         }
             .background(Color.primaryColor)
+            .onAppear() {
+                self.saved = self.verbatim
+            }
     }
 }
 
@@ -179,16 +216,45 @@ func colorTitle(title: Log.Title) -> Text? {
     return nil
 }
 
+extension String {
+    func indices(of occurrence: String) -> [Int] {
+        var indices = [Int]()
+        var position = startIndex
+        while let range = range(of: occurrence, range: position..<endIndex) {
+            let i = distance(from: startIndex,
+                             to: range.lowerBound)
+            indices.append(i)
+            let offset = occurrence.distance(from: occurrence.startIndex,
+                                             to: occurrence.endIndex) - 1
+            guard let after = index(range.lowerBound,
+                                    offsetBy: offset,
+                                    limitedBy: endIndex) else {
+                                        break
+            }
+            position = index(after: after)
+        }
+        return indices
+    }
+}
+
+extension String {
+    func ranges(of searchString: String) -> [Range<String.Index>] {
+        let _indices = indices(of: searchString)
+        let count = searchString.count
+        return _indices.map({ index(startIndex, offsetBy: $0)..<index(startIndex, offsetBy: $0+count) })
+    }
+}
+
 struct LineView_Previews: PreviewProvider {
     static var previews: some View {
-        LineView(log: Log(lineNum: [1, 2],
-                          dateAtLine: [1 : Date(), 2 : Date()],
-                          title: .ERROR,
-                          threadAtLine: [ 1 : "ThreadName" , 2 : "OtherThread"],
-                          process: "ProcessName",
-                          text: "Text Here",
-                          traceAtLine: [ 1 : "\nTrace here", 2 : "\nAnother trace here"],
-                          showDetails: true),
+        LineView(filter: .constant(Filter(showErrors: true, showWarns: true, searchText: "here", includeTrace: true, ignoreCase: true)), log:     Log(lineNum: [1, 2],
+                    dateAtLine: [1 : Date(), 2 : Date()],
+                    title: .ERROR,
+                    threadAtLine: [ 1 : "ThreadName" , 2 : "OtherThread"],
+                    process: "ProcessName",
+                    text: "Text Here",
+                    traceAtLine: [ 1 : "\nTrace here", 2 : "\nAnother trace here"],
+                    showDetails: true),
                  selectedLineNum: 1, detailsMinHeight: 100)
     }
 }

@@ -50,6 +50,7 @@ struct Filter {
     var showWarns: Bool
     var searchText: String
     var includeTrace: Bool
+    var ignoreCase: Bool
 }
 
 struct ShortDate: Equatable {
@@ -113,7 +114,10 @@ final class Data: ObservableObject {
     public var loadingDatesData: LoadingDatesData
     
     @Published var status: Status = .waiting
-    @Published var message: String?
+    @Published var percDatesLoaded: Double = 0
+    @Published var percLogsLoaded: Double = 0
+    @Published var numDatesLoaded: Int = 0
+    @Published var numLogsLoaded: Int = 0
     
     enum Status: String {
         case waiting
@@ -161,7 +165,7 @@ final class Data: ObservableObject {
         
         Data.dateToLongTextFormatter.locale = Locale(identifier: "en_US_POSIX")
         Data.dateToLongTextFormatter.dateStyle = .full
-        Data.dateToLongTextFormatter.timeStyle = .long
+        Data.dateToLongTextFormatter.timeStyle = .medium
         Data.dateToLongTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         Data.numberFormatter.numberStyle = .decimal
@@ -211,53 +215,46 @@ final class Data: ObservableObject {
     }
     
     func getNumFilteredLogs(filter: Filter) -> Int {
-        var num = 0
-        var logIndex = 0
-        
-        while(logArray.count > logIndex) {
-            
-            //Compare with filter
-            if(filter.includeTrace && filter.searchText != ""){
-                var found = false
-                
-                for trace in logArray[logIndex].traceAtLine.values {
-                   if(trace.contains(filter.searchText)) {
-                       found = true
-                   }
-               }
-                if(!found) {
-                    logIndex += 1
-                    continue
-                }
-            } else if(filter.searchText != "" && !logArray[logIndex].text.contains(filter.searchText)){
-                logIndex += 1
-                continue
-            }
-            
-            
-            if(filter.showErrors && logArray[logIndex].title == .ERROR ||
-                filter.showWarns && logArray[logIndex].title == .WARN) {
-                num += 1
-            }
-            
-            logIndex += 1
-        }
-        
-        return num
+        return filterLogs(filter: filter).count
     }
     
     func getFilteredLogs(filter: Filter) -> [Log] {
         var foundLogArray = [Log]()
+        for index in filterLogs(filter: filter) {
+            foundLogArray.append(logArray[index])
+        }
+        return foundLogArray
+    }
+    
+    func filterLogs(filter: Filter) -> [Int] {
+        var foundIndexArray = [Int]()
         var logIndex = 0
         
         while(logArray.count > logIndex) {
             
             //Compare with filter
+            
+            //search traces
             if(filter.includeTrace && filter.searchText != ""){
                 var found = false
                 
+                var textToSearchFor: String
+                if(filter.ignoreCase) {
+                    textToSearchFor = filter.searchText.lowercased()
+                } else {
+                    textToSearchFor = filter.searchText
+                }
+                
                 for trace in logArray[logIndex].traceAtLine.values {
-                   if(trace.contains(filter.searchText)) {
+                    
+                    var textToSearch: String
+                    if(filter.ignoreCase) {
+                        textToSearch = trace.lowercased()
+                    } else {
+                        textToSearch = trace
+                    }
+                    
+                   if(textToSearch.contains(textToSearchFor)) {
                        found = true
                    }
                }
@@ -265,21 +262,39 @@ final class Data: ObservableObject {
                     logIndex += 1
                     continue
                 }
-            } else if(filter.searchText != "" && !logArray[logIndex].text.contains(filter.searchText)){
-                logIndex += 1
-                continue
+            //Only search text
+            } else if(filter.searchText != ""){
+                
+                var textToSearchFor: String
+                if(filter.ignoreCase) {
+                    textToSearchFor = filter.searchText.lowercased()
+                } else {
+                    textToSearchFor = filter.searchText
+                }
+                
+                var textToSearch: String
+                if(filter.ignoreCase) {
+                    textToSearch = logArray[logIndex].text.lowercased()
+                } else {
+                    textToSearch = logArray[logIndex].text
+                }
+                
+                if(!textToSearch.contains(textToSearchFor)) {
+                    logIndex += 1
+                    continue
+                }
             }
             
-            
+            //add log if conditions were met
             if(filter.showErrors && logArray[logIndex].title == .ERROR ||
                 filter.showWarns && logArray[logIndex].title == .WARN) {
-                foundLogArray.append(logArray[logIndex])
+                foundIndexArray.append(logIndex)
             }
             
             logIndex += 1
         }
         
-        return foundLogArray
+        return foundIndexArray
     }
     
     /*Static*/
@@ -323,7 +338,9 @@ final class Data: ObservableObject {
                 //Update status every 99? lines
                 if (fileIndex % 99 == 0) {
                     UI {
-                        self.message = "line: \(Data.getFormattedNumber(fileIndex))/\(Data.getFormattedNumber(self.file!.lines.count)) | unique dates: \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
+                        self.percDatesLoaded = 100 * (Double(fileIndex) / Double(self.file!.lines.count))
+                        self.numDatesLoaded = self.loadingDatesData.shortDatesList.count
+                        
                     }//End UI
                 }
                 
@@ -355,8 +372,8 @@ final class Data: ObservableObject {
             //End Parsing
             
             UI {
-                self.message = "line: \(Data.getFormattedNumber(self.file!.lines.count))/\(Data.getFormattedNumber(self.file!.lines.count))" +
-                " | unique dates: \(Data.getFormattedNumber(self.loadingDatesData.shortDatesList.count))"
+                self.percDatesLoaded = 100
+                self.numDatesLoaded = self.loadingDatesData.shortDatesList.count
                 
                 print("Load dates result, lines: \(self.file!.lines.count), dates: \(self.loadingDatesData.shortDatesList.count)")
             }//End UI
@@ -406,7 +423,8 @@ final class Data: ObservableObject {
                 //Update status every 99 lines
                 if(fileIndex % 99 == 0) {
                     UI {
-                        self.message = "line: \(Data.getFormattedNumber(fileIndex - startIndex))/\(Data.getFormattedNumber(self.file!.lines.count - startIndex)) | unique logs: \(Data.getFormattedNumber(newLogArray.count))"
+                        self.percLogsLoaded = 100 * (Double(fileIndex - startIndex) / Double(self.file!.lines.count - startIndex))
+                        self.numLogsLoaded = newLogArray.count
                     }//End UI
                 }
                 
@@ -490,9 +508,9 @@ final class Data: ObservableObject {
             }
             //End Parsing
             
-            UI {
-                self.message = "line: \(Data.getFormattedNumber(self.file!.lines.count - startIndex))/\(Data.getFormattedNumber(self.file!.lines.count - startIndex))" +
-                " | unique logs: \(Data.getFormattedNumber(newLogArray.count))"
+            UI {               
+                self.percLogsLoaded = 100
+                self.numLogsLoaded = newLogArray.count
                 
                 print("Load logs result, lines: \(self.file!.lines.count - startIndex), logs: \(newLogArray.count), discarded: \(discarded), appended: \(appended)")
                 

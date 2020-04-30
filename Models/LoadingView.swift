@@ -8,7 +8,48 @@
 
 import SwiftUI
 
-func loadingView(_ data: Data, filter: Binding<Filter>) -> AnyView {
+struct loadingView: View, DropDelegate {
+    @EnvironmentObject var data: Data
+    
+    var body: some View {
+        HStack {
+            Spacer()
+        VStack {
+            Spacer()
+            
+            Text("Log Parser")
+                .bold()
+            
+            Spacer()
+            
+            Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
+            
+            Spacer()
+            
+            loadingViewMessage(data)
+                .frame(width: 400, height: 50)
+            
+            Spacer()
+        }.onDrop(of: [(kUTTypeFileURL as String)], delegate: self)
+            Spacer()
+        }
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+
+           guard let itemProvider = info.itemProviders(for: [(kUTTypeFileURL as String)]).first else { return false }
+
+           itemProvider.loadItem(forTypeIdentifier: (kUTTypeFileURL as String), options: nil) {item, error in
+               guard let thisData = item as? Foundation.Data, let url = URL(dataRepresentation: thisData, relativeTo: nil) else { return }
+               
+               self.data.loadFile(filePath: url.path)
+           }
+
+           return true
+       }
+}
+
+private func loadingViewMessage(_ data: Data) -> AnyView {
     switch data.status {
         case .waiting:
             return AnyView(waitingView().environmentObject(data))
@@ -23,130 +64,79 @@ func loadingView(_ data: Data, filter: Binding<Filter>) -> AnyView {
     }
 }
 
-struct waitingView: View, DropDelegate {
+private struct waitingView: View {
     @EnvironmentObject var data: Data
     
     var body: some View {
-        HStack {
-            Spacer()
-            VStack{
-                Spacer()
-                
-                Text("Log Parser")
-                    .bold()
-                
-                Spacer()
-                
-                Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
-                
-                Spacer()
-                
-                HStack {
-                    Text("Drag and drop a file, or")
-                        .foregroundColor(.secondary)
-                    Button("Select File...", action: {
-                        UI {
-                            let path: String?
-                            
-                            let openPanel = NSOpenPanel()
-                            openPanel.makeKeyAndOrderFront(nil)
-                            openPanel.level = .modalPanel
-                            
-                            let response = openPanel.runModal()
-                            
-                            if ( response == NSApplication.ModalResponse.OK )
-                            {
-                                path = openPanel.url!.path
-                            }
-                            else {
-                                path = nil
-                            }
-                                
-                            if(path != nil) {
-                                self.data.loadFile(filePath: path!)
-                            }
+            HStack {
+                Text("Drag and drop a file, or")
+                    .foregroundColor(.secondary)
+                Button("Select File...", action: {
+                    UI {
+                        let path: String?
+                        
+                        let openPanel = NSOpenPanel()
+                        openPanel.makeKeyAndOrderFront(nil)
+                        openPanel.level = .modalPanel
+                        
+                        let response = openPanel.runModal()
+                        
+                        if ( response == NSApplication.ModalResponse.OK )
+                        {
+                            path = openPanel.url!.path
                         }
-                    })
-                    .onHover(perform: {val in
-                        if(val){
-                            NSCursor.pointingHand.set()
-                        } else {
-                            NSCursor.arrow.set()
+                        else {
+                            path = nil
                         }
-                    })
-                }
-                
-                Spacer()
+                            
+                        if(path != nil) {
+                            self.data.loadFile(filePath: path!)
+                        }
+                    }
+                })
+                .onHover(perform: {val in
+                    if(val){
+                        NSCursor.pointingHand.set()
+                    } else {
+                        NSCursor.arrow.set()
+                    }
+                })
             }
-            Spacer()
-        }.onDrop(of: [(kUTTypeFileURL as String)], delegate: self)
-    }
-    
-    func performDrop(info: DropInfo) -> Bool {
-
-        guard let itemProvider = info.itemProviders(for: [(kUTTypeFileURL as String)]).first else { return false }
-
-        itemProvider.loadItem(forTypeIdentifier: (kUTTypeFileURL as String), options: nil) {item, error in
-            guard let thisData = item as? Foundation.Data, let url = URL(dataRepresentation: thisData, relativeTo: nil) else { return }
-            
-            self.data.loadFile(filePath: url.path)
-        }
-
-        return true
     }
 }
 
-struct openingView: View {
+private struct openingView: View {
     var body: some View {
-        HStack {
-            Spacer()
-            VStack{
-                Spacer()
-                Text("Log Parser")
-                    .bold()
-                Spacer()
-                Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
-                Spacer()
-                Text("")
-                Text("Opening file...")
-                Spacer()
-            }
-            Spacer()
+        VStack {
+            Text("")
+            Text("Opening file...")
         }
     }
 }
 
-struct VLoadingView: View {
+private struct VLoadingView: View {
     @EnvironmentObject var data: Data
     
     var body: some View {
-        HStack {
-            Spacer()
-            VStack {
-                Spacer()
-                Text("Log Parser")
-                    .bold()
-                Spacer()
-                Image(nsImage: NSImage(imageLiteralResourceName: "AppIcon"))
-                Spacer()
-                Text("\(data.status.toString())")
-                Text("\(data.message ?? "no message")")
-                Spacer()
+        VStack {
+            Text("\(data.status.toString())")
+            if(data.status == .loading_dates) {
+                Text("%" + String(format: "%.2f", data.percDatesLoaded) + " | dates: \(data.numDatesLoaded)")
+            } else if (data.status == .loading_logs) {
+                Text("%" + String(format: "%.2f", data.percLogsLoaded) + " | logs: \(data.numLogsLoaded)")
             }
-            Spacer()
         }
     }
 }
 
-struct HLoadingView: View {
+public struct HLoadingView: View {
     @EnvironmentObject var data: Data
     
-    var body: some View {
+    public var body: some View {
         HStack {
             if(self.data.status == .reloading) {
-                
-                    Text("\(data.status.toString()) ")
-                    Text("\(data.message ?? "no message")")
+                Text("\(data.status.toString())")
+                Text(String(format: "%.2f", data.percLogsLoaded) + " | logs: \(data.numLogsLoaded)")
             } else {
                 EmptyView()
             }

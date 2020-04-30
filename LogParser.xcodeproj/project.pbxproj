@@ -17,6 +17,7 @@
 		23D31F242422ECF900BE5126 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F1C2422ECF800BE5126 /* Data.swift */; };
 		23D31F252422ECF900BE5126 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F1D2422ECF800BE5126 /* ContentView.swift */; };
 		23D31F312422ED7700BE5126 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F302422ED7700BE5126 /* File.swift */; };
+		23E7B272245A05FA0037547A /* TextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E7B271245A05FA0037547A /* TextStyle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		23D31F1F2422ECF800BE5126 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
 		23D31F292422ED1100BE5126 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		23D31F302422ED7700BE5126 /* File.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		23E7B271245A05FA0037547A /* TextStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextStyle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +81,7 @@
 				234AF5E72422EECA0065A7AA /* LineView.swift */,
 				234AF5E82422EECA0065A7AA /* LogView.swift */,
 				234267462453E9130028F9B1 /* DatePickerView.swift */,
+				23E7B271245A05FA0037547A /* TextStyle.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -152,6 +155,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				23E7B272245A05FA0037547A /* TextStyle.swift in Sources */,
 				234AF5E92422EECA0065A7AA /* LineView.swift in Sources */,
 				234AF5EA2422EECA0065A7AA /* LogView.swift in Sources */,
 				234AF5E22422EE270065A7AA /* Main.storyboard in Sources */,

@@ -17,6 +17,7 @@ extension Color {
     static let uiDarkBlue = Color(NSColor(named: "UIDarkBlue")!)
     static let uiGreen = Color(NSColor(named: "UIGreen")!)
     static let uiPurple = Color(NSColor(named: "UIPurple")!)
+    static let uiYellow = Color(NSColor(named: "UIYellow")!)
 }
 
 struct ContentView: View {
@@ -25,7 +26,8 @@ struct ContentView: View {
         showErrors: true,
         showWarns: false,
         searchText: "",
-        includeTrace: true)
+        includeTrace: true,
+        ignoreCase: true)
     @State var searchSettingsOn = false
     
     let window: NSWindow
@@ -34,7 +36,7 @@ struct ContentView: View {
         
         VStack {
             if(data.status != .loaded && data.status != .reloading) {
-                loadingView(data, filter: $filter)
+                loadingView().environmentObject(data)
             } else {
                 //Top bar
                 HStack {
@@ -44,11 +46,12 @@ struct ContentView: View {
                     //Search settings
                     if(searchSettingsOn) {
                         
+                        Toggle("Search traces", isOn: $filter.includeTrace)
+                        Toggle("Ignore case", isOn: $filter.ignoreCase)
                         Toggle("ERROR", isOn: $filter.showErrors)
                             .foregroundColor(Color.uiRed)
                         Toggle("WARN", isOn: $filter.showWarns)
                             .foregroundColor(.yellow)
-                        Toggle("Search traces", isOn: $filter.includeTrace)
 
                         //Date picker and reload button
                         datePickerView(numberDaysToLoad: Int(data.startingDate.d.distance(to: Date())) / SECONDS_PER_DAY).environmentObject(data)
@@ -81,7 +84,7 @@ struct ContentView: View {
                 .frame(minWidth: 650)
                 
                 //Log View
-                LogView(logArray: data.getFilteredLogs(filter: filter))
+                LogView(filter: self.$filter, logArray: data.getFilteredLogs(filter: filter))
                     .background(Color.primaryColor)
                     .onAppear() {
                         print("Setting window... \(self.window.screen!.visibleFrame)")
