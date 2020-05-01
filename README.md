@@ -9,6 +9,11 @@ After selecting a log to load it will count the number of logs and dates, and th
 Features:
 > - search for specific phrases
 > - logs are organized by date (click the gear and then use the picker to load additional dates beyond the first)
+> - Click the gear to expand filters:
+>     search includes traces (reduces performance)
+>     search ignores case
+>     include errors
+>     include warnings
 > - click the log to expand the traces that were found
 > - Open in Terminal: (opens terminal in the background) allows you to view where that line is in the context of the rest of the log
 > - Copy to clipboard
