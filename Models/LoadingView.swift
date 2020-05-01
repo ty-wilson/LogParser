@@ -37,16 +37,18 @@ struct loadingView: View, DropDelegate {
     
     func performDrop(info: DropInfo) -> Bool {
 
-           guard let itemProvider = info.itemProviders(for: [(kUTTypeFileURL as String)]).first else { return false }
+        guard let itemProvider = info.itemProviders(for: [(kUTTypeFileURL as String)]).first else { return false }
+            
+        itemProvider.loadItem(forTypeIdentifier: (kUTTypeFileURL as String), options: nil) {item, error in
+            guard let thisData = item as? Foundation.Data, let url = URL(dataRepresentation: thisData, relativeTo: nil) else { return }
+                   
+            if(self.data.status == .waiting) {
+                self.data.loadFile(filePath: url.path)
+            }
+        }
 
-           itemProvider.loadItem(forTypeIdentifier: (kUTTypeFileURL as String), options: nil) {item, error in
-               guard let thisData = item as? Foundation.Data, let url = URL(dataRepresentation: thisData, relativeTo: nil) else { return }
-               
-               self.data.loadFile(filePath: url.path)
-           }
-
-           return true
-       }
+        return true
+    }
 }
 
 private func loadingViewMessage(_ data: Data) -> AnyView {

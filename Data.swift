@@ -415,7 +415,7 @@ final class Data: ObservableObject {
             var discarded = 0
             var lastLogIndex: Int = 0
             let startIndex = self.loadingDatesData.firstIndexList[self.loadingDatesData.shortDatesList.firstIndex(of: self.startingDate)!]
-            print("Starting at \(self.startingDate). index: \(startIndex)")
+            //print("Starting at \(self.startingDate). index: \(startIndex)")
             
             //Parsing
             for fileIndex in startIndex...self.file!.lines.count - 1{
@@ -428,7 +428,6 @@ final class Data: ObservableObject {
                     }//End UI
                 }
                 
-                //new//
                 //Check date
                 let dateSeperator = self.file!.lines[fileIndex].firstIndex(of: "[")
                 if(dateSeperator != nil && dateSeperator != self.file!.lines[fileIndex].startIndex) {
@@ -470,8 +469,8 @@ final class Data: ObservableObject {
                                             .dropFirst().dropLast()
                                             .trimmingCharacters(in: .whitespaces)
                                         
-                                        let textChunk = String(self.file!.lines[fileIndex][processSeperator2!...]
-                                            .dropFirst())
+                                        let textChunk = self.file!.lines[fileIndex][processSeperator2!...]
+                                            .dropFirst(3).trimmingCharacters(in: .whitespaces)
                                         
                                         //search logs for the text of the new log and add it
                                         var wasFound = false

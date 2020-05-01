@@ -90,7 +90,7 @@ struct LineView: View {
             
             //Detailed View
             if(log.showDetails) {
-                HSplitView() {
+                HStack {
                     //Line | Date | Thread
                     VStack(alignment: .leading) {
                         List (log.lineNum, selection: $selectedLineNum) { num in
@@ -99,7 +99,6 @@ struct LineView: View {
                                 
                                 Text("line \(num):")
                                 .foregroundColor(.secondary)
-                                .padding(2)
                                 Text("\(Data.dateToLongTextFormatter.string(from: self.log.dateAtLine[num]!!))")
                                     .foregroundColor(Color.uiBlue)
                                 Text("[\(self.log.threadAtLine[num]!)]")
@@ -107,14 +106,15 @@ struct LineView: View {
                             }
                         }
                     }.padding([.top, .bottom], 10)
-                    .frame(minWidth: 300, idealWidth: 455)
+                    .frame(width: 460)
                     
                     //Text: Combine text with other text
                     if(selectedLineNum != nil) {
                         HStack {
                             VStack(alignment: .leading) {
                                 HStack {
-                                    Text("Trace:").bold().foregroundColor(Color.secondary)
+                                    Text("Trace at line \(selectedLineNum!):").bold().foregroundColor(Color.secondary)
+                                    
                                     Button("Open in Terminal", action: {
                                     var error: NSDictionary?
                                     if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
@@ -156,11 +156,13 @@ struct LineView: View {
                                 if (filter.ignoreCase) {
                                     StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
                                         .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
-                                        .frame(maxWidth: 900)
+                                        .frame(maxWidth: 800)
                                         .fixedSize()//magic to make the textbox fit
                                 } else {
                                     StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
                                         .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
+                                        .frame(maxWidth: 800)
+                                        .fixedSize()//magic to make the textbox fit
                                 }
                                 
                                 Spacer()
@@ -173,7 +175,7 @@ struct LineView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 
-                                resettingTextField(verbatim: "")
+                                Text(verbatim: "")
                                 Spacer()
                             }
                             Spacer()
@@ -184,25 +186,6 @@ struct LineView: View {
                 .fixedSize(horizontal: false, vertical: true)//magic
             }
         }
-    }
-}
-
-struct resettingTextField: View {
-    @State var verbatim: String
-    @State var saved: String = ""
-    
-    var body: some View {
-        
-        TextField("", text: $verbatim)
-            .frame(maxWidth: 1000)
-            //prevent edits
-            .onReceive([verbatim].publisher.first()) { (value) in
-                self.verbatim = self.saved
-        }
-            .background(Color.primaryColor)
-            .onAppear() {
-                self.saved = self.verbatim
-            }
     }
 }
 

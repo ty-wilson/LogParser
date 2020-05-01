@@ -26,7 +26,7 @@ struct ContentView: View {
         showErrors: true,
         showWarns: false,
         searchText: "",
-        includeTrace: true,
+        includeTrace: false,
         ignoreCase: true)
     @State var searchSettingsOn = false
     
