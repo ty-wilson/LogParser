@@ -23,8 +23,9 @@ extension Color {
 struct ContentView: View {
     @EnvironmentObject var data: Data
     @State public var filter = Filter(
+        //Inital filter:
         showErrors: true,
-        showWarns: false,
+        showWarns: true,
         searchText: "",
         includeTrace: false,
         ignoreCase: true)

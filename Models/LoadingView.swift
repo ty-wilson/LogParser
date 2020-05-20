@@ -121,7 +121,7 @@ private struct VLoadingView: View {
     
     var body: some View {
         VStack {
-            Text("\(data.status.toString())")
+            Text("\(data.status.toString(data: data))")
             if(data.status == .loading_dates) {
                 Text("%" + String(format: "%.2f", data.percDatesLoaded) + " | dates: \(data.numDatesLoaded)")
             } else if (data.status == .loading_logs) {
@@ -137,7 +137,7 @@ public struct HLoadingView: View {
     public var body: some View {
         HStack {
             if(self.data.status == .reloading) {
-                Text("\(data.status.toString())")
+                Text("\(data.status.toString(data: data))")
                 Text("%" + String(format: "%.2f", data.percLogsLoaded) + " | logs: \(data.numLogsLoaded)")
             } else {
                 EmptyView()

@@ -103,6 +103,7 @@ final class Data: ObservableObject {
     static let numberFormatter = NumberFormatter()
     static let dateToShortTextFormatter = DateFormatter()
     static let dateToLongTextFormatter = DateFormatter()
+    static let dateToTextWithNoTimeFormatter = DateFormatter()
     
     private let textToShortDateFormatter: DateFormatter
     private let textToLongDateFormatter: DateFormatter
@@ -127,7 +128,7 @@ final class Data: ObservableObject {
         case loaded
         case reloading
         
-        func toString() -> String {
+        func toString(data: Data) -> String {
             switch self {
                 case .waiting:
                     return "Waiting"
@@ -135,12 +136,10 @@ final class Data: ObservableObject {
                     return "Opening file..."
                 case .loading_dates:
                     return "Checking for available dates..."
-                case .loading_logs:
-                    return "Parsing logs..."
+                case .loading_logs, .reloading:
+                    return "Parsing logs starting at \(Data.dateToTextWithNoTimeFormatter.string(from: data.startingDate.d))..."
                 case .loaded:
                     return "Loaded"
-                case .reloading:
-                    return "Parsing logs..."
             }
         }
     }
@@ -162,6 +161,11 @@ final class Data: ObservableObject {
         Data.dateToShortTextFormatter.dateStyle = .long
         Data.dateToShortTextFormatter.timeStyle = .short
         Data.dateToShortTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        Data.dateToTextWithNoTimeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        Data.dateToTextWithNoTimeFormatter.dateStyle = .short
+        Data.dateToTextWithNoTimeFormatter.timeZone = .none
+        Data.dateToTextWithNoTimeFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         Data.dateToLongTextFormatter.locale = Locale(identifier: "en_US_POSIX")
         Data.dateToLongTextFormatter.dateStyle = .full
@@ -223,6 +227,7 @@ final class Data: ObservableObject {
         for index in filterLogs(filter: filter) {
             foundLogArray.append(logArray[index])
         }
+        print("returning a log array with \(foundLogArray.count) logs")
         return foundLogArray
     }
     
@@ -538,25 +543,21 @@ final class Data: ObservableObject {
             }
             //End Parsing
             
-            UI {               
-                self.percLogsLoaded = 100
-                self.numLogsLoaded = newLogArray.count
-                
-                print("Load logs result, lines: \(self.file!.lines.count - startIndex), logs: \(newLogArray.count), discarded: \(discarded), appended: \(appended)")
-                
-                self.status = .loaded
-            }//End UI
-            
-            //Save log
-            self.logArray = newLogArray
-            print("End of BG task for loadLogs()")
-            
-            //Continue loading if no logs were found
-            if(untilFound && self.logArray.count == 0) {
+            //Restart loading at an earlier date, if no logs were found
+            if(untilFound && newLogArray.count == 0) {
                 self.startingDate = ShortDate(d: self.startingDate.d.advanced(by: TimeInterval(-1 * SECONDS_PER_DAY)))
                 self.loadLogs(true)
             }
-            
+            else {
+                UI {
+                    self.status = .loaded
+                    print("Load logs result, lines: \(self.file!.lines.count - startIndex), logs: \(newLogArray.count), discarded: \(discarded), appended: \(appended)")
+                }//End UI
+                
+                //Save log
+                self.logArray = newLogArray
+            }
+            print("End of BG task for loadLogs()")
         } //End BG
         print("Called loadLogs()")
     }
