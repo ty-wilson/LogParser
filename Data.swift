@@ -227,7 +227,6 @@ final class Data: ObservableObject {
         for index in filterLogs(filter: filter) {
             foundLogArray.append(logArray[index])
         }
-        print("returning a log array with \(foundLogArray.count) logs")
         return foundLogArray
     }
     

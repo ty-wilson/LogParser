@@ -116,8 +116,17 @@ struct LineView: View {
                                     Text("Trace at line \(selectedLineNum!):").bold().foregroundColor(Color.secondary)
                                     
                                     Button("Open in Terminal", action: {
-                                    var error: NSDictionary?
-                                    if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
+                                        var error: NSDictionary?
+                                        if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
+                                                if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
+                                                                                                                   &error) {
+                                                    //print(output.stringValue)
+                                                } else if (error != nil) {
+                                                    print("error: \(String(describing: error))")
+                                                }
+                                            }
+                                        
+                                        if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to set bounds of front window to {0, 0, 1200, 9999} & activate") {
                                             if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
                                                                                                                &error) {
                                                 //print(output.stringValue)
@@ -125,7 +134,6 @@ struct LineView: View {
                                                 print("error: \(String(describing: error))")
                                             }
                                         }
-                                    
                                     })
                                     .onHover(perform: {val in
                                         if(val){
