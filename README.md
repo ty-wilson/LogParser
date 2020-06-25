@@ -19,7 +19,8 @@ Features:
 > - Copy to clipboard
 
 bugs:
-> - open in terminal doesn't make Terminal the front window or maximize it
+> - (somewhat fixed) open in terminal doesn't make Terminal the front window or maximize it 
 > - details occasionally resize when other details are opened
 > - certain logs cause truncation (...) to appear at end of text line
 > - long traces truncate the bottom of the trace in the GUI
+> - doesn't currently find fatal errors (soon to come)
