@@ -10,6 +10,9 @@ import SwiftUI
 
 struct loadingView: View, DropDelegate {
     @EnvironmentObject var data: Data
+    @State private var date = Date()
+    
+    let window: NSWindow
     
     var body: some View {
         HStack {
@@ -29,6 +32,13 @@ struct loadingView: View, DropDelegate {
             loadingViewMessage(data)
                 .frame(width: 400, height: 50)
             
+            /*DatePicker(
+                    "Start Date",
+                    selection: $date,
+                    displayedComponents: [.date]
+            )
+            .datePickerStyle(GraphicalDatePickerStyle())*/
+            
             Spacer()
         }.onDrop(of: [(kUTTypeFileURL as String)], delegate: self)
             Spacer()
@@ -44,6 +54,9 @@ struct loadingView: View, DropDelegate {
                    
             if(self.data.status == .waiting) {
                 self.data.loadFile(filePath: url.path)
+                UI {
+                    window.title = "\(url.path)"
+                }
             }
         }
 

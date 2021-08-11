@@ -47,7 +47,7 @@ struct LineView: View {
                     Text(String(log.lineNum.count) + "x")
                         .foregroundColor(Color.secondary)
                     
-                    colorTitle(title: log.title)
+                    Text(verbatim: log.title.rawValue).foregroundColor(colorTitle(title: log.title))
                     Text(log.process).foregroundColor(Color.uiGreen)
                     if(filter.ignoreCase) {
                         StyledText(verbatim: log.text)
@@ -116,24 +116,23 @@ struct LineView: View {
                                     Text("Trace at line \(selectedLineNum!):").bold().foregroundColor(Color.secondary)
                                     
                                     Button("Open in Terminal", action: {
+                                        let appleScript1 = "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\""
+                                        let appleScript2 = "tell app \"Terminal\" to set bounds of front window to {0, 0, 1200, 9999} & activate"
                                         var error: NSDictionary?
-                                        if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\"") {
-                                                if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
-                                                                                                                   &error) {
-                                                    //print(output.stringValue)
+                                        
+                                        func executeScript(script: String){
+                                            if let scriptObject = NSAppleScript(source: script) {
+                                                if let output = scriptObject.executeAndReturnError(&error).stringValue {
+                                                    print(output)
                                                 } else if (error != nil) {
-                                                    print("error: \(String(describing: error))")
+                                                    print("error: ", error!)
                                                 }
                                             }
-                                        
-                                        if let scriptObject = NSAppleScript(source: "tell app \"Terminal\" to set bounds of front window to {0, 0, 1200, 9999} & activate") {
-                                            if let _: NSAppleEventDescriptor = scriptObject.executeAndReturnError(
-                                                                                                               &error) {
-                                                //print(output.stringValue)
-                                            } else if (error != nil) {
-                                                print("error: \(String(describing: error))")
-                                            }
                                         }
+                                        
+                                        executeScript(script: appleScript1)
+                                        executeScript(script: appleScript2)
+                                        
                                     })
                                     .onHover(perform: {val in
                                         if(val){
@@ -197,14 +196,19 @@ struct LineView: View {
     }
 }
 
-func colorTitle(title: Log.Title) -> Text? {
-    if(title == .ERROR) {
-        return Text(verbatim: title.rawValue).foregroundColor(.red)
+func colorTitle(title: Log.Title) -> Color {
+    switch title {
+    case .ERROR:
+        return .uiOrange
+    case .WARN:
+        return .uiYellow
+    case .FATAL:
+        return .uiRed
+    case .INFO:
+        return .white
+    case .MISSING:
+        return .white
     }
-    if(title == .WARN) {
-        return Text(verbatim: title.rawValue).foregroundColor(.yellow)
-    }
-    return nil
 }
 
 extension String {

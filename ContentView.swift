@@ -18,6 +18,7 @@ extension Color {
     static let uiGreen = Color(NSColor(named: "UIGreen")!)
     static let uiPurple = Color(NSColor(named: "UIPurple")!)
     static let uiYellow = Color(NSColor(named: "UIYellow")!)
+    static let uiOrange = Color(NSColor(named: "UIOrange")!)
 }
 
 struct ContentView: View {
@@ -37,7 +38,7 @@ struct ContentView: View {
         
         VStack {
             if(data.status != .loaded && data.status != .reloading) {
-                loadingView().environmentObject(data)
+                loadingView(window: window).environmentObject(data)
             } else {
                 //Top bar
                 HStack {
@@ -50,9 +51,9 @@ struct ContentView: View {
                         Toggle("Search traces", isOn: $filter.includeTrace)
                         Toggle("Ignore case", isOn: $filter.ignoreCase)
                         Toggle("ERROR", isOn: $filter.showErrors)
-                            .foregroundColor(Color.uiRed)
+                            .foregroundColor(colorTitle(title: Data.stringToTitle("ERROR")))
                         Toggle("WARN", isOn: $filter.showWarns)
-                            .foregroundColor(.yellow)
+                            .foregroundColor(colorTitle(title: Data.stringToTitle("WARN")))
 
                         //Date picker and reload button
                         datePickerView(numberDaysToLoad: Int(data.startingDate.d.distance(to: Date())) / SECONDS_PER_DAY).environmentObject(data)

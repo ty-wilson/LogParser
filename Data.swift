@@ -23,6 +23,7 @@ struct Log: Hashable, Identifiable {
         case ERROR
         case WARN
         case INFO
+        case FATAL
         case MISSING
     }
     
@@ -234,64 +235,51 @@ final class Data: ObservableObject {
         var foundIndexArray = [Int]()
         var logIndex = 0
         
+        //adjust search text
+        let textToSearchFor = filter.ignoreCase ? filter.searchText.lowercased() : filter.searchText
+        var foundText = true
+        
         while(logArray.count > logIndex) {
             
-            //Compare with filter
-            
-            //search traces
-            if(filter.includeTrace && filter.searchText != ""){
-                var found = false
+            //search process
+            if(textToSearchFor != ""){
+                //set requirement
+                foundText = false
                 
-                var textToSearchFor: String
-                if(filter.ignoreCase) {
-                    textToSearchFor = filter.searchText.lowercased()
-                } else {
-                    textToSearchFor = filter.searchText
-                }
-                
-                for trace in logArray[logIndex].traceAtLine.values {
-                    
-                    var textToSearch: String
-                    if(filter.ignoreCase) {
-                        textToSearch = trace.lowercased()
-                    } else {
-                        textToSearch = trace
-                    }
-                    
-                   if(textToSearch.contains(textToSearchFor)) {
-                       found = true
-                   }
+                let textToSearch = filter.ignoreCase ? logArray[logIndex].process.lowercased() : logArray[logIndex].process
+               if(textToSearch.contains(textToSearchFor)) {
+                    foundText = true
                }
-                if(!found) {
-                    logIndex += 1
-                    continue
-                }
-            //Only search text
-            } else if(filter.searchText != ""){
-                
-                var textToSearchFor: String
-                if(filter.ignoreCase) {
-                    textToSearchFor = filter.searchText.lowercased()
-                } else {
-                    textToSearchFor = filter.searchText
-                }
-                
-                var textToSearch: String
-                if(filter.ignoreCase) {
-                    textToSearch = logArray[logIndex].text.lowercased()
-                } else {
-                    textToSearch = logArray[logIndex].text
-                }
-                
-                if(!textToSearch.contains(textToSearchFor)) {
-                    logIndex += 1
-                    continue
+            
+                //then search traces or just the one line
+                if(!foundText){
+                    //search traces
+                    if(filter.includeTrace){
+                        for trace in logArray[logIndex].traceAtLine.values {
+                            
+                            let textToSearch = filter.ignoreCase ? trace.lowercased() : trace
+                           if(textToSearch.contains(textToSearchFor)) {
+                                foundText = true
+                           }
+                       }
+                    }
+                    //search text
+                    else {
+                        let textToSearch = filter.ignoreCase ? logArray[logIndex].text.lowercased() : logArray[logIndex].text
+                        
+                        if(textToSearch.contains(textToSearchFor)) {
+                            foundText = true
+                        }
+                    }
                 }
             }
             
-            //add log if conditions were met
-            if(filter.showErrors && logArray[logIndex].title == .ERROR ||
-                filter.showWarns && logArray[logIndex].title == .WARN) {
+            
+            //add log if conditions are met
+            if(foundText && (
+                filter.showErrors && logArray[logIndex].title == .ERROR ||
+                filter.showWarns && logArray[logIndex].title == .WARN ||
+                logArray[logIndex].title == Log.Title.FATAL)) {
                 foundIndexArray.append(logIndex)
             }
             
@@ -308,6 +296,7 @@ final class Data: ObservableObject {
             case "ERROR": return .ERROR
             case "INFO": return .INFO
             case "WARN": return .WARN
+            case "FATAL": return .FATAL
             default: print("Could not find title \(string)"); return .MISSING
         }
     }
@@ -415,9 +404,9 @@ final class Data: ObservableObject {
             }
             
             //Data
-            var appended = 0
             var discarded = 0
             var lastLogIndex: Int = 0
+            var lastFileIndex: Int = 0
             let startIndex = self.loadingDatesData.firstIndexList[self.loadingDatesData.shortDatesList.firstIndex(of: self.startingDate)!]
             //print("Starting at \(self.startingDate). index: \(startIndex)")
             
@@ -453,8 +442,8 @@ final class Data: ObservableObject {
                                 continue
                             }
                             
-                            //if title was found, check thread and process
-                            if(titleChunk == "ERROR" || titleChunk == "WARN") {
+                            //if title is valid, check thread and process
+                            if(isValidLog(title: Data.stringToTitle(titleChunk))) {
                                 titleSeperator = self.file!.lines[fileIndex].index(after: titleSeperator!)
                                 let threadSeperator1 = self.file!.lines[fileIndex][titleSeperator!...].firstIndex(of: "[")
                                 var threadSeperator2 = self.file!.lines[fileIndex][titleSeperator!...].firstIndex(of: "]")
@@ -500,8 +489,6 @@ final class Data: ObservableObject {
                                                     newLogArray[logIndex].threadAtLine.updateValue(threadChunk, forKey: fileIndex)
                                                     //Start trace at line
                                                     newLogArray[logIndex].traceAtLine.updateValue(textChunk, forKey: fileIndex)
-                                                    
-                                                    appended += 1
                                                                                                         
                                                     //data check
                                                     //if(log[logIndex].process != lineChunks[3]) {print("Process mismatch from line \(fileIndex) : \(lineChunks[3]) vs \(log[logIndex].process)")}
@@ -520,6 +507,7 @@ final class Data: ObservableObject {
                                                              showDetails: false)
                                             
                                             lastLogIndex = newLogArray.count
+                                            lastFileIndex = fileIndex
                                             //Add new log data
                                             newLogArray.append(newLogRecord)
                                             continue
@@ -534,9 +522,9 @@ final class Data: ObservableObject {
                 }
                 
                 //append to previous trace instead
-                if(newLogArray.count != 0) {
+                if(newLogArray.count != 0 && lastFileIndex == fileIndex - 1) {
                     newLogArray[lastLogIndex].traceAtLine[newLogArray[lastLogIndex].lineNum.last!]?.append("\n\(self.file!.lines[fileIndex])")
-                    appended += 1
+                    lastFileIndex += 1
                 }
                 continue
             }
@@ -550,7 +538,7 @@ final class Data: ObservableObject {
             else {
                 UI {
                     self.status = .loaded
-                    print("Load logs result, lines: \(self.file!.lines.count - startIndex), logs: \(newLogArray.count), discarded: \(discarded), appended: \(appended)")
+                    print("Load logs result, lines: \(self.file!.lines.count - startIndex), logs: \(newLogArray.count), discarded: \(discarded)")
                 }//End UI
                 
                 //Save log
@@ -559,6 +547,21 @@ final class Data: ObservableObject {
             print("End of BG task for loadLogs()")
         } //End BG
         print("Called loadLogs()")
+    }
+}
+
+func isValidLog(title: Log.Title) -> Bool {
+    switch title {
+    case .ERROR:
+        return true
+    case .WARN:
+        return true
+    case .INFO:
+        return false
+    case .FATAL:
+        return true
+    case .MISSING:
+        return false
     }
 }
 
