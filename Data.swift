@@ -467,7 +467,7 @@ final class Data: ObservableObject {
                                         .trimmingCharacters(in: .whitespaces)
                                     
                                     let textChunk = self.file!.lines[fileIndex][processSeperator2!...]
-                                        .dropFirst(3).trimmingCharacters(in: .whitespaces)
+                                        .dropFirst(3).trimmingCharacters(in: .whitespacesAndNewlines)
                                     
                                     //search logs for the text of the new log and add it
                                     var wasFound = false

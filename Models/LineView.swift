@@ -52,11 +52,9 @@ struct LineView: View {
                     if(filter.ignoreCase) {
                         StyledText(verbatim: log.text)
                             .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
-                        .lineLimit(1)
                     } else {
                         StyledText(verbatim: log.text)
                         .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
-                        .lineLimit(1)
                     }
                 }.onHover(perform: {val in
                     if(val){
