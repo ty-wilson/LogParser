@@ -51,10 +51,12 @@ struct LineView: View {
                     Text(log.process).foregroundColor(Color.uiGreen)
                     if(filter.ignoreCase) {
                         StyledText(verbatim: log.text)
-                            .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
+                        .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
+                        .foregroundColor(Color.uiWhite)
                     } else {
                         StyledText(verbatim: log.text)
                         .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
+                        .foregroundColor(Color.uiWhite)
                     }
                 }.onHover(perform: {val in
                     if(val){

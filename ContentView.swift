@@ -19,6 +19,7 @@ extension Color {
     static let uiPurple = Color(NSColor(named: "UIPurple")!)
     static let uiYellow = Color(NSColor(named: "UIYellow")!)
     static let uiOrange = Color(NSColor(named: "UIOrange")!)
+    static let uiWhite = Color(NSColor(named: "UIWhite")!)
 }
 
 struct ContentView: View {
