@@ -55,7 +55,6 @@ struct ContentView: View {
                         Toggle("WARN", isOn: $filter.showWarns)
                             .foregroundColor(colorTitle(title: Data.stringToTitle("WARN")))
 
-                        //Date picker and reload button
                         datePickerView(numberDaysToLoad: Int(data.startingDate.d.distance(to: Date())) / SECONDS_PER_DAY).environmentObject(data)
                     }
                     

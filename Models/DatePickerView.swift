@@ -30,10 +30,10 @@ struct datePickerView: View {
                     //Highlight the currently filtered date
                     if (self.data.loadingDatesData.convertToShortDate(self.getDateFromToday(minus: $0)).d
                         .compare(self.data.startingDate.d) == .orderedSame) {
-                        Text(self.generatePickerTextFor(daysAgo: $0))
+                        Text(self.generatePickerTextFor(numDaysToSearch: $0))
                             .foregroundColor(Color.uiGreen)
                     } else {
-                        Text(self.generatePickerTextFor(daysAgo: $0))
+                        Text(self.generatePickerTextFor(numDaysToSearch: $0))
                     }
                 }
             }
@@ -49,19 +49,17 @@ struct datePickerView: View {
         }
     }
     
-    //Finds the date and number of logs to display per line in the view with format:
-    // 33 days ago (2020-01-01 | XXXX logs)
-    // or
-    // 33 days ago (2020-01-01 | +XXXX logs = YYYY)
-    func generatePickerTextFor(daysAgo: Int) -> String {
+    //Returns a string containing the date and number of total logs based on the number of total dates to be searched, staring with the latest date:
+    // 33 days ago (YYYY-MM-DD | X total logs)
+    func generatePickerTextFor(numDaysToSearch: Int) -> String {
         var text = String()
-        if (daysAgo == 0) {
+        if (numDaysToSearch == 0) {
             text.append("Today: " + dateToString(Date()) + " | " + Data.getFormattedNumber(self.data.loadingDatesData.occurancesAt(Date())) + " logs")
         } else {
             //Date
-            text.append(dateToString(getDateFromToday(minus: daysAgo)) + ": ")
+            text.append(dateToString(getDateFromToday(minus: numDaysToSearch)) + ": ")
             //Logs
-            text.append(Data.getFormattedNumber(self.data.loadingDatesData.occurancesAfterAndIncluding(getDateFromToday(minus: daysAgo))) + " logs")
+            text.append(Data.getFormattedNumber(self.data.loadingDatesData.occurancesAfterAndIncluding(getDateFromToday(minus: numDaysToSearch))) + " logs")
         }
         
         return text

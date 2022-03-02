@@ -31,7 +31,7 @@ class File {
         self.path = path
         
         do {
-            fileContent = try NSString(contentsOfFile: self.path, encoding: String.Encoding.utf8.rawValue)
+            fileContent = try NSString(contentsOfFile: self.path, encoding: String.Encoding.ascii.rawValue)
         } catch {
             print("Failed to open file \(self.path)")
             print(error.localizedDescription)

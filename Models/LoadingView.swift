@@ -136,9 +136,9 @@ private struct VLoadingView: View {
         VStack {
             Text("\(data.status.toString(data: data))")
             if(data.status == .loading_dates) {
-                Text("%" + String(format: "%.2f", data.percDatesLoaded) + " | dates: \(data.numDatesLoaded)")
+                Text("%" + String(format: "%.2f", data.percentDatesLoaded) + " | dates: \(data.numDatesLoaded)")
             } else if (data.status == .loading_logs) {
-                Text("%" + String(format: "%.2f", data.percLogsLoaded) + " | logs: \(data.numLogsLoaded)")
+                Text("%" + String(format: "%.2f", data.percentLogsLoaded) + " | logs: \(data.numLogsLoaded)")
             }
         }
     }
@@ -151,7 +151,7 @@ public struct HLoadingView: View {
         HStack {
             if(self.data.status == .reloading) {
                 Text("\(data.status.toString(data: data))")
-                Text("%" + String(format: "%.2f", data.percLogsLoaded) + " | logs: \(data.numLogsLoaded)")
+                Text("%" + String(format: "%.2f", data.percentLogsLoaded) + " | logs: \(data.numLogsLoaded)")
             } else {
                 EmptyView()
             }
