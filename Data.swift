@@ -247,14 +247,15 @@ final class Data: ObservableObject {
         var foundText = true
         
         while(logArray.count > logIndex) {
+            let log = logArray[logIndex]
             
             //search process
             if(textToSearchFor != ""){
                 //set requirement
                 foundText = false
                 
-                let textToSearch = filter.ignoreCase ? logArray[logIndex].process.lowercased() : logArray[logIndex].process
-                if(textToSearch.contains(textToSearchFor)) {
+                let processText = filter.ignoreCase ? log.process.lowercased() : log.process
+                if(processText.contains(textToSearchFor)) {
                     foundText = true
                 }
             
@@ -262,20 +263,52 @@ final class Data: ObservableObject {
                 if(!foundText){
                     //search traces
                     if(filter.includeTrace){
-                        for trace in logArray[logIndex].traceAtLine.values {
+                        for trace in log.traceAtLine.values {
                             
-                            let textToSearch = filter.ignoreCase ? trace.lowercased() : trace
-                           if(textToSearch.contains(textToSearchFor)) {
+                            let traceText = filter.ignoreCase ? trace.lowercased() : trace
+                           if(traceText.contains(textToSearchFor)) {
                                 foundText = true
                            }
                        }
                     }
                     //search text
                     else {
-                        let textToSearch = filter.ignoreCase ? logArray[logIndex].text.lowercased() : logArray[logIndex].text
+                        let traceText = filter.ignoreCase ? log.text.lowercased() : log.text
                         
-                        if(textToSearch.contains(textToSearchFor)) {
+                        if(traceText.contains(textToSearchFor)) {
                             foundText = true
+                        }
+                    }
+                }
+                
+                //then search date range
+                if(!foundText) {
+                    let dateRangeTextRaw = Data.dateRangeText(log)
+                    let dateRangeText = filter.ignoreCase ? dateRangeTextRaw.lowercased() : dateRangeTextRaw
+                    if(dateRangeText.contains(textToSearchFor)) {
+                        foundText = true
+                    }
+                }
+                
+                //then search all dates
+                if(!foundText && filter.includeTrace) {
+                    for date in log.dateAtLine.values {
+                        if date != nil {
+                            let dateTextRaw = Data.dateToLongTextFormatter.string(from: date!)
+                            let dateText = filter.ignoreCase ? dateTextRaw.lowercased() : dateTextRaw
+                            if(dateText.contains(textToSearchFor)) {
+                                 foundText = true
+                            }
+                        }
+                    }
+                }
+                
+                //then search thread
+                if(!foundText && filter.includeTrace) {
+                    for thread in log.threadAtLine.values {
+                        let threadText = filter.ignoreCase ? thread.lowercased() : thread
+                        if(threadText.contains(textToSearchFor)) {
+                             foundText = true
                         }
                     }
                 }
@@ -284,9 +317,9 @@ final class Data: ObservableObject {
             
             //add log if conditions are met
             if(foundText && (
-                filter.showErrors && logArray[logIndex].title == .ERROR ||
-                filter.showWarns && logArray[logIndex].title == .WARN ||
-                logArray[logIndex].title == Log.Title.FATAL)) {
+                filter.showErrors && log.title == .ERROR ||
+                filter.showWarns && log.title == .WARN ||
+                log.title == Log.Title.FATAL)) {
                 foundIndexArray.append(logIndex)
             }
             
@@ -319,6 +352,15 @@ final class Data: ObservableObject {
             alert.alertStyle = .warning
             alert.addButton(withTitle: "OK")
             alert.runModal()
+        }
+    }
+    
+    static func dateRangeText(_ log: Log) -> String {
+        if(log.lineNum.count > 1) {
+            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
+                "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))"
+        } else {
+            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))"
         }
     }
     

@@ -3,7 +3,7 @@
 //  LogParser
 //
 //  Created by Tyler Wilson on 3/13/20.
-//  Copyright © 2020 Tyler Wilson. All rights reserved.
+//  Copyright © 2022 Tyler Wilson. All rights reserved.
 //
 
 import SwiftUI
@@ -30,15 +30,6 @@ struct LineView: View {
         }
     }
     
-    var dateRangeText: String {
-        if(log.lineNum.count > 1) {
-            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
-                "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))"
-        } else {
-            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))"
-        }
-    }
-    
     var body: some View {
         VStack {
             //Basic View
@@ -48,16 +39,16 @@ struct LineView: View {
                         .foregroundColor(Color.secondary)
                     
                     Text(verbatim: log.title.rawValue).foregroundColor(colorTitle(title: log.title))
-                    Text(log.process).foregroundColor(Color.uiGreen)
-                    if(filter.ignoreCase) {
-                        StyledText(verbatim: log.text)
-                        .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
+                    StyledText(verbatim: log.process)
+                        .style(.highlight(), ranges: {
+                            filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)
+                        })
+                        .foregroundColor(Color.uiGreen)
+                    StyledText(verbatim: log.text)
+                        .style(.highlight(), ranges: {
+                            filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)
+                        })
                         .foregroundColor(Color.uiWhite)
-                    } else {
-                        StyledText(verbatim: log.text)
-                        .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
-                        .foregroundColor(Color.uiWhite)
-                    }
                 }.onHover(perform: {val in
                     if(val){
                         NSCursor.pointingHand.set()
@@ -72,18 +63,22 @@ struct LineView: View {
                 
                 Spacer()
                 
-                Button(dateRangeText, action: {
-                    self.log.showDetails = !self.log.showDetails
-                    self.data.toggleShowDetails(self.log)
-                }).foregroundColor(.uiBlue)
-                .buttonStyle(PlainButtonStyle())
-                .onHover(perform: {val in
-                    if(val){
-                        NSCursor.pointingHand.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                })
+                StyledText(verbatim: Data.dateRangeText(log))
+                    .style(.highlight(), ranges: {
+                            filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)
+                        })
+                    .foregroundColor(.uiBlue)
+                    .onHover(perform: {val in
+                        if(val){
+                            NSCursor.pointingHand.set()
+                        } else {
+                            NSCursor.arrow.set()
+                        }
+                    })
+                    .onTapGesture {
+                            self.log.showDetails = !self.log.showDetails
+                            self.data.toggleShowDetails(self.log)
+                }
             }
             .padding(.trailing, 5)
             .opacity(opacity)
@@ -98,10 +93,13 @@ struct LineView: View {
                                 //Add line, date and thread
                                 
                                 Text("line \(num):")
-                                .foregroundColor(.secondary)
-                                Text("\(Data.dateToLongTextFormatter.string(from: self.log.dateAtLine[num]!!))")
+                                    .foregroundColor(.secondary)
+                                StyledText(verbatim: "\(Data.dateToLongTextFormatter.string(from: self.log.dateAtLine[num]!!))")
+                                    .style(.highlight(), ranges: { filter.includeTrace ? (filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)) : [] })
                                     .foregroundColor(Color.uiBlue)
-                                Text("[\(self.log.threadAtLine[num]!)]")
+
+                                StyledText(verbatim: "[\(self.log.threadAtLine[num]!)]")
+                                    .style(.highlight(), ranges: { filter.includeTrace ? (filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)) : [] })
                                     .foregroundColor(Color.uiPurple)
                             }
                         }
@@ -113,7 +111,11 @@ struct LineView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 HStack {
-                                    Text("Trace at line \(selectedLineNum!):").bold().foregroundColor(Color.secondary)
+                                    if #available(macOS 12.0, *) {
+                                        Text("Trace at line \(selectedLineNum!):").bold().foregroundColor(Color.secondary).textSelection(.enabled)
+                                    } else {
+                                        Text("Trace at line \(selectedLineNum!):").bold().foregroundColor(Color.secondary)
+                                    }
                                     
                                     Button("Open in Terminal", action: {
                                         let appleScript1 = "tell app \"Terminal\" to do script \"nano +\(self.selectedLineNum! + 1) '\(self.data.getFilePath())'\""
@@ -145,7 +147,12 @@ struct LineView: View {
                                     Button("Copy to clipboard", action: {
                                         let pasteboard = NSPasteboard.general
                                         pasteboard.declareTypes([NSPasteboard.PasteboardType.string], owner: nil)
-                                        pasteboard.setString(self.log.traceAtLine[self.selectedLineNum!]!, forType: NSPasteboard.PasteboardType.string)
+                                        var stringToCopy = Data.dateToLongTextFormatter.string(from: self.log.dateAtLine[self.selectedLineNum!]!!) + " "
+                                        stringToCopy += "[" + self.log.title.rawValue + "] "
+                                        stringToCopy += "[" + self.log.threadAtLine[self.selectedLineNum!]! + "] "
+                                        stringToCopy += "[" + self.log.process + "] - "
+                                        stringToCopy += self.log.traceAtLine[self.selectedLineNum!]!
+                                        pasteboard.setString(stringToCopy, forType: NSPasteboard.PasteboardType.string)
                                         self.hasCopied = true
                                     })
                                     .onHover(perform: {val in
@@ -160,14 +167,15 @@ struct LineView: View {
                                 }
                                 .frame(minWidth: 350)
                                 
-                                if (filter.ignoreCase) {
+                                if #available(macOS 12.0, *) {
                                     StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
-                                        .style(.highlight(), ranges: { $0.lowercased().ranges(of: filter.searchText.lowercased()) })
+                                        .style(.highlight(), ranges: { filter.includeTrace ? (filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)) : [] })
+                                        .textSelection(.enabled)
                                         .frame(maxWidth: 800)
                                         .fixedSize()//magic to make the textbox fit
                                 } else {
                                     StyledText(verbatim: log.traceAtLine[selectedLineNum!]!)
-                                        .style(.highlight(), ranges: { $0.ranges(of: filter.searchText) })
+                                        .style(.highlight(), ranges: { filter.includeTrace ? (filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)) : [] })
                                         .frame(maxWidth: 800)
                                         .fixedSize()//magic to make the textbox fit
                                 }
@@ -240,6 +248,7 @@ extension String {
     }
 }
 
+@available(macOS 12.0, *)
 struct LineView_Previews: PreviewProvider {
     static var previews: some View {
         LineView(filter: .constant(Filter(showErrors: true, showWarns: true, searchText: "here", includeTrace: true, ignoreCase: true)), log:     Log(lineNum: [1, 2],
