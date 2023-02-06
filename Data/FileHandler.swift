@@ -12,102 +12,7 @@ import AppKit
 
 let SECONDS_PER_DAY = 86400
 
-/*Structs*/
-
-struct Log: Hashable, Identifiable {
-    var id: Int {
-        return dateAtLine.keys.first!
-    }
-    
-    enum Title: String {
-        case ERROR
-        case WARN
-        case INFO
-        case FATAL
-        case MISSING
-    }
-    
-    func getFirstDate() -> Date? {
-        return dateAtLine[dateAtLine.keys.first!]!
-    }
-    
-    mutating func toggleDetails() {
-        showDetails = !showDetails
-    }
-    
-    var lineNum: [Int]
-    var dateAtLine: Dictionary<Int, Date?>
-    let title: Title
-    var threadAtLine: Dictionary<Int, String>
-    let process: String
-    let text: String
-    var traceAtLine: Dictionary<Int, String>
-    var showDetails: Bool
-}
-
-//Determines what logs to return
-struct Filter {
-    var showErrors: Bool
-    var showWarns: Bool
-    var searchText: String
-    var includeTrace: Bool
-    var ignoreCase: Bool
-}
-
-struct EquatableDate: Equatable {
-    let d: Date
-}
-
-/*struct realEquatableDate: Equatable, Date {
-    let d: Date
-}*/
-
-func returnEquatableDateList(_ dateList: [Date]) {
-    return
-}
-
-//Startup data
-struct LoadingDatesData {
-    public var shortDatesList: [EquatableDate] //expects only short dates from convertToShortDate or textToShortDateFormatter
-    public var occurancesList: [Int]
-    public var firstIndexList: [Int]
-    
-    func occurancesAt(_ rawDate: Date) -> Int {
-        let shortDate = convertToShortDate(rawDate)
-        if(shortDatesList.firstIndex(of: shortDate) != nil) {
-            return occurancesList[shortDatesList.firstIndex(of: shortDate)!]
-        }
-        else {
-            return 0
-        }
-    }
-    
-    func occurancesAfterAndIncluding(_ rawDate: Date) -> Int {
-        let shortDate = convertToShortDate(rawDate)
-        var total = 0
-        
-        //Check if dates in the datesData are after the date and add the occurances from that date to the total
-        if(shortDatesList.firstIndex(of: shortDate) != nil) {
-            for datesIndex in 0...shortDatesList.count - 1 {
-                if (shortDatesList[datesIndex].d.compare(shortDate.d) != .orderedAscending) {
-                    total += occurancesList[datesIndex]
-                }
-            }
-        }
-        
-        return total
-    }
-    
-    func convertToShortDate(_ date: Date) -> EquatableDate {
-        let extraTime = Int(date.timeIntervalSince1970) % SECONDS_PER_DAY
-        let newDate = Date(timeIntervalSince1970: TimeInterval(Int(date.timeIntervalSince1970) - extraTime))
-        return EquatableDate(d: newDate)
-    }
-}
-
-/*Data Class*/
-
-final class Data: ObservableObject {
+final class FileHandler: ObservableObject {
     
     static let numberFormatter = NumberFormatter()
     static let dateToShortTextFormatter = DateFormatter()
@@ -121,7 +26,7 @@ final class Data: ObservableObject {
     public var logArray = [Log]()
     
     public var startingDate: EquatableDate
-    public var loadingDatesData: LoadingDatesData
+    public var parsedDates: ParsedDates
     
     @Published var status: Status = .waiting
     @Published var percentDatesLoaded: Double = 0
@@ -137,7 +42,7 @@ final class Data: ObservableObject {
         case loaded
         case reloading
         
-        func toString(data: Data) -> String {
+        func toString(fileHandler: FileHandler) -> String {
             switch self {
                 case .waiting:
                     return "Waiting"
@@ -146,7 +51,7 @@ final class Data: ObservableObject {
                 case .loading_dates:
                     return "Checking for available dates..."
                 case .loading_logs, .reloading:
-                    return "Parsing logs starting at \(Data.dateToTextWithNoTimeFormatter.string(from: data.startingDate.d))..."
+                    return "Parsing logs starting at \(FileHandler.dateToTextWithNoTimeFormatter.string(from: fileHandler.startingDate.d))..."
                 case .loaded:
                     return "Loaded"
             }
@@ -154,7 +59,7 @@ final class Data: ObservableObject {
     }
     
     init() {
-        print("Initializing Data")
+        print("Initializing File Handler")
         textToShortDateFormatter = DateFormatter()
         textToShortDateFormatter.locale = Locale(identifier: "en_US_POSIX")
         textToShortDateFormatter.dateFormat = "yyyy-MM-dd"
@@ -165,25 +70,25 @@ final class Data: ObservableObject {
         textToLongDateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss,SSS"
         textToLongDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
-        Data.dateToShortTextFormatter.locale = Locale(identifier: "en_US_POSIX")
-        Data.dateToShortTextFormatter.dateStyle = .long
-        Data.dateToShortTextFormatter.timeStyle = .short
-        Data.dateToShortTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        FileHandler.dateToShortTextFormatter.locale = Locale(identifier: "en_US_POSIX")
+        FileHandler.dateToShortTextFormatter.dateStyle = .long
+        FileHandler.dateToShortTextFormatter.timeStyle = .short
+        FileHandler.dateToShortTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
-        Data.dateToTextWithNoTimeFormatter.locale = Locale(identifier: "en_US_POSIX")
-        Data.dateToTextWithNoTimeFormatter.dateStyle = .short
-        Data.dateToTextWithNoTimeFormatter.timeZone = .none
-        Data.dateToTextWithNoTimeFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        FileHandler.dateToTextWithNoTimeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        FileHandler.dateToTextWithNoTimeFormatter.dateStyle = .short
+        FileHandler.dateToTextWithNoTimeFormatter.timeZone = .none
+        FileHandler.dateToTextWithNoTimeFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
-        Data.dateToLongTextFormatter.locale = Locale(identifier: "en_US_POSIX")
-        Data.dateToLongTextFormatter.dateStyle = .full
-        Data.dateToLongTextFormatter.timeStyle = .medium
-        Data.dateToLongTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        FileHandler.dateToLongTextFormatter.locale = Locale(identifier: "en_US_POSIX")
+        FileHandler.dateToLongTextFormatter.dateStyle = .full
+        FileHandler.dateToLongTextFormatter.timeStyle = .medium
+        FileHandler.dateToLongTextFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
-        Data.numberFormatter.numberStyle = .decimal
+        FileHandler.numberFormatter.numberStyle = .decimal
         
-        loadingDatesData = LoadingDatesData(shortDatesList: [EquatableDate](), occurancesList: [Int](), firstIndexList: [Int]())
-        startingDate = loadingDatesData.convertToShortDate(Date())
+        parsedDates = ParsedDates()
+        startingDate = convertToShortDate(Date())
     }
     
     func loadFile(filePath: String) {
@@ -200,7 +105,7 @@ final class Data: ObservableObject {
                 UI {
                     self.status = .waiting
                 }
-                Data.alertMessage("Failed to open file:\n\(filePath)")
+                FileHandler.alertMessage("Failed to open file:\n\(filePath)")
                 return
             }
             
@@ -222,10 +127,6 @@ final class Data: ObservableObject {
         return file!.getPath()
     }
     
-    func getFirstDate() -> Date? {
-        return loadingDatesData.shortDatesList[0].d
-    }
-    
     func getNumFilteredLogs(filter: Filter) -> Int {
         return filterLogs(filter: filter).count
     }
@@ -244,76 +145,11 @@ final class Data: ObservableObject {
         
         //adjust search text
         let textToSearchFor = filter.ignoreCase ? filter.searchText.lowercased() : filter.searchText
-        var foundText = true
         
         while(logArray.count > logIndex) {
             let log = logArray[logIndex]
             
-            //search process
-            if(textToSearchFor != ""){
-                //set requirement
-                foundText = false
-                
-                let processText = filter.ignoreCase ? log.process.lowercased() : log.process
-                if(processText.contains(textToSearchFor)) {
-                    foundText = true
-                }
-            
-                //then search traces or just the one line
-                if(!foundText){
-                    //search traces
-                    if(filter.includeTrace){
-                        for trace in log.traceAtLine.values {
-                            
-                            let traceText = filter.ignoreCase ? trace.lowercased() : trace
-                           if(traceText.contains(textToSearchFor)) {
-                                foundText = true
-                           }
-                       }
-                    }
-                    //search text
-                    else {
-                        let traceText = filter.ignoreCase ? log.text.lowercased() : log.text
-                        
-                        if(traceText.contains(textToSearchFor)) {
-                            foundText = true
-                        }
-                    }
-                }
-                
-                //then search date range
-                if(!foundText) {
-                    let dateRangeTextRaw = Data.dateRangeText(log)
-                    let dateRangeText = filter.ignoreCase ? dateRangeTextRaw.lowercased() : dateRangeTextRaw
-                    if(dateRangeText.contains(textToSearchFor)) {
-                        foundText = true
-                    }
-                }
-                
-                //then search all dates
-                if(!foundText && filter.includeTrace) {
-                    for date in log.dateAtLine.values {
-                        if date != nil {
-                            let dateTextRaw = Data.dateToLongTextFormatter.string(from: date!)
-                            let dateText = filter.ignoreCase ? dateTextRaw.lowercased() : dateTextRaw
-                            if(dateText.contains(textToSearchFor)) {
-                                 foundText = true
-                            }
-                        }
-                    }
-                }
-                
-                //then search thread
-                if(!foundText && filter.includeTrace) {
-                    for thread in log.threadAtLine.values {
-                        let threadText = filter.ignoreCase ? thread.lowercased() : thread
-                        if(threadText.contains(textToSearchFor)) {
-                             foundText = true
-                        }
-                    }
-                }
-            }
-            
+            let foundText = searchLogs(log, textToSearchFor, filter)
             
             //add log if conditions are met
             if(foundText && (
@@ -327,6 +163,104 @@ final class Data: ObservableObject {
         }
         
         return foundIndexArray
+    }
+    
+    private func searchLogs(_ log: Log, _ textToSearchFor: String, _ filter: Filter) -> Bool {
+        var foundText = true; //set to true so everything is returned on a blank search
+
+        if(textToSearchFor != ""){
+            
+            foundText = false
+            
+            foundText = searchProcess(log, textToSearchFor, filter)
+            if(!foundText) { foundText = searchTextOrTrace(log, textToSearchFor, filter) }
+            if(!foundText) { foundText = searchDateRange(log, textToSearchFor, filter) }
+            if(!foundText) { foundText = searchAllDates(log, textToSearchFor, filter)}
+            if(!foundText) { foundText = searchThread(log, textToSearchFor, filter) }
+        }
+        
+        return foundText
+    }
+    
+    private func searchProcess(_ log: Log, _ textToSearchFor: String, _ filter: Filter) -> Bool {
+        var foundText = false
+        let processText = filter.ignoreCase ? log.process.lowercased() : log.process
+        
+        if(processText.contains(textToSearchFor)) {
+            foundText = true
+        }
+        
+        return foundText
+    }
+    
+    private func searchTextOrTrace(_ log: Log, _ textToSearchFor: String, _ filter: Filter) -> Bool {
+        var foundText = false
+        
+        //search traces
+        if(filter.includeTrace){
+            for trace in log.traceAtLine.values {
+                let traceText = filter.ignoreCase ? trace.lowercased() : trace
+                
+                if(traceText.contains(textToSearchFor)) {
+                    foundText = true
+                }
+           }
+        }
+        //only search text
+        else {
+            let traceText = filter.ignoreCase ? log.text.lowercased() : log.text
+            
+            if(traceText.contains(textToSearchFor)) {
+                foundText = true
+            }
+        }
+        
+        return foundText
+    }
+    
+    private func searchDateRange(_ log: Log, _ textToSearchFor: String, _ filter: Filter) -> Bool {
+        var foundText = false
+        let dateRangeTextRaw = FileHandler.dateRangeText(log)
+        let dateRangeText = filter.ignoreCase ? dateRangeTextRaw.lowercased() : dateRangeTextRaw
+        
+        if(dateRangeText.contains(textToSearchFor)) {
+            foundText = true
+        }
+        
+        return foundText
+    }
+    
+    private func searchAllDates(_ log: Log, _ textToSearchFor: String, _ filter: Filter) -> Bool {
+        var foundText = false
+        
+        if(filter.includeTrace) {
+            for date in log.dateAtLine.values {
+                if date != nil {
+                    let dateTextRaw = FileHandler.dateToLongTextFormatter.string(from: date!)
+                    let dateText = filter.ignoreCase ? dateTextRaw.lowercased() : dateTextRaw
+                    if(dateText.contains(textToSearchFor)) {
+                        foundText = true
+                    }
+                }
+            }
+        }
+        
+        return foundText
+    }
+    
+    private func searchThread(_ log: Log, _ textToSearchFor: String, _ filter: Filter) -> Bool {
+        var foundText = false
+        
+        if(filter.includeTrace) {
+            for thread in log.threadAtLine.values {
+                let threadText = filter.ignoreCase ? thread.lowercased() : thread
+                if(threadText.contains(textToSearchFor)) {
+                    foundText = true
+                }
+            }
+        }
+        
+        return foundText
     }
     
     /*Static*/
@@ -357,10 +291,10 @@ final class Data: ObservableObject {
     
     static func dateRangeText(_ log: Log) -> String {
         if(log.lineNum.count > 1) {
-            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
-                "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))"
+            return "\(FileHandler.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!)) - " +
+                "\(FileHandler.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[log.lineNum.count - 1]]!!))"
         } else {
-            return "\(Data.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))"
+            return "\(FileHandler.dateToShortTextFormatter.string(from: log.dateAtLine[log.lineNum[0]]!!))"
         }
     }
     
@@ -380,7 +314,7 @@ final class Data: ObservableObject {
                 if (fileIndex % 99 == 0) {
                     UI {
                         self.percentDatesLoaded = 100 * (Double(fileIndex) / Double(self.file!.lines.count))
-                        self.numDatesLoaded = self.loadingDatesData.shortDatesList.count
+                        self.numDatesLoaded = self.parsedDates.count()
                     }//End UI
                 }
                 
@@ -398,15 +332,12 @@ final class Data: ObservableObject {
                     {
                         let shortDate = EquatableDate(d: date!)
                         //Add date if new
-                        if(!self.loadingDatesData.shortDatesList.contains(shortDate)) {
-                            //print(self.status.rawValue + ": adding " + date!.description)
-                            self.loadingDatesData.shortDatesList.append(shortDate)
-                            self.loadingDatesData.occurancesList.append(1)
-                            self.loadingDatesData.firstIndexList.append(fileIndex)
+                        if(!self.parsedDates.contains(shortDate)) {
+                            self.parsedDates.add(shortDate, occurances: 1, firstIndex: fileIndex)
                         }
                         //Else add occurance
                         else {
-                            self.loadingDatesData.occurancesList[self.loadingDatesData.shortDatesList.firstIndex(of: shortDate)!] += 1
+                            self.parsedDates.addOccurance(shortDate)
                         }
                     }
                 }
@@ -416,20 +347,20 @@ final class Data: ObservableObject {
             //Update status
             UI {
                 self.percentDatesLoaded = 100
-                self.numDatesLoaded = self.loadingDatesData.shortDatesList.count
-                print("Load dates result, lines: \(self.file!.lines.count), dates: \(self.loadingDatesData.shortDatesList.count)")
+                self.numDatesLoaded = self.parsedDates.count()
+                print("Load dates result, lines: \(self.file!.lines.count), dates: \(self.parsedDates.count())")
             }//End UI
             
             //If at least one date is found, load logs
-            if(self.loadingDatesData.shortDatesList.count > 0) {
+            if(self.parsedDates.count() > 0) {
                 //Start parsing logs at the most recent date
-                self.startingDate = self.loadingDatesData.shortDatesList[self.loadingDatesData.shortDatesList.count - 1]
+                self.startingDate = self.parsedDates.getLast()
                 self.loadLogs(true)
             } else {
                 UI {
                     self.status = .waiting
                 }//End UI
-                Data.alertMessage("Unrecognized file contents:\n\(self.file!.getPath())")
+                FileHandler.alertMessage("Unrecognized file contents:\n\(self.file!.getPath())")
                 return
             }
             print("End of BG task for loadDates()")
@@ -454,7 +385,8 @@ final class Data: ObservableObject {
             var discarded = 0
             var lastInsertedLogIndex: Int = 0
             var lastInsertedFileIndex: Int = 0
-            let startIndex = self.loadingDatesData.firstIndexList[self.loadingDatesData.shortDatesList.firstIndex(of: self.startingDate)!]
+            //let startIndex = self.parsedDates.dateToOccurancesAndIndex[self.startingDate]!.firstIndex
+            let startIndex = self.parsedDates.getClosestIndexToDate(self.startingDate)
             //print("Starting at \(self.startingDate). index: \(startIndex)")
             
             //Parsing file line by line
@@ -492,7 +424,7 @@ final class Data: ObservableObject {
                             //check thread and process
                             titleSeperator = self.file!.lines[fileIndex].index(after: titleSeperator!)
                             let threadSeperator1 = self.file!.lines[fileIndex][titleSeperator!...].firstIndex(of: "[")
-                            var threadSeperator2 = self.file!.lines[fileIndex][titleSeperator!...].firstIndex(of: "]")
+                            var threadSeperator2 = self.file!.lines[fileIndex][threadSeperator1!...].firstIndex(of: "]")
                             
                             if(threadSeperator1 != nil && threadSeperator2 != nil) {
                                 let threadChunk = self.file!.lines[fileIndex][threadSeperator1!...threadSeperator2!]
@@ -501,7 +433,7 @@ final class Data: ObservableObject {
                                 
                                 threadSeperator2 = self.file!.lines[fileIndex].index(after: threadSeperator2!)
                                 let processSeperator1 = self.file!.lines[fileIndex][threadSeperator2!...].firstIndex(of: "[")
-                                let processSeperator2 = self.file!.lines[fileIndex][threadSeperator2!...].firstIndex(of: "]")
+                                let processSeperator2 = self.file!.lines[fileIndex][processSeperator1!...].firstIndex(of: "]")
                                 
                                 if(processSeperator1 != nil && processSeperator2 != nil) {
                                     let processChunk = self.file!.lines[fileIndex][processSeperator1!...processSeperator2!]
@@ -547,7 +479,7 @@ final class Data: ObservableObject {
                                     if(!wasFound) {
                                         let newLogRecord = Log(lineNum: [fileIndex],
                                                          dateAtLine: [fileIndex : date],
-                                                         title: Data.stringToTitle(titleChunk),
+                                                         title: FileHandler.stringToTitle(titleChunk),
                                                          threadAtLine: [fileIndex : threadChunk],
                                                          process: processChunk,
                                                          text: textChunk,
@@ -610,4 +542,12 @@ extension Int: Identifiable{
     public var id: Int {
         return self
     }
+}
+
+struct EquatableDate: Equatable, Hashable, Comparable {
+    static func < (lhs: EquatableDate, rhs: EquatableDate) -> Bool {
+        return lhs.d.compare(rhs.d) != .orderedDescending
+    }
+    
+    let d: Date
 }

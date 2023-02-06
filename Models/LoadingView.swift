@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-struct loadingView: View, DropDelegate {
-    @EnvironmentObject var data: Data
+struct LoadingView: View, DropDelegate {
+    @EnvironmentObject var fileHandler: FileHandler
     @State private var date = Date()
     
     let window: NSWindow
@@ -29,7 +29,7 @@ struct loadingView: View, DropDelegate {
             
             Spacer()
             
-            loadingViewMessage(data)
+            loadingViewMessage(fileHandler)
                 .frame(width: 400, height: 50)
             
             /*DatePicker(
@@ -52,8 +52,8 @@ struct loadingView: View, DropDelegate {
         itemProvider.loadItem(forTypeIdentifier: (kUTTypeFileURL as String), options: nil) {item, error in
             guard let thisData = item as? Foundation.Data, let url = URL(dataRepresentation: thisData, relativeTo: nil) else { return }
                    
-            if(self.data.status == .waiting) {
-                self.data.loadFile(filePath: url.path)
+            if(self.fileHandler.status == .waiting) {
+                self.fileHandler.loadFile(filePath: url.path)
                 UI {
                     window.title = "\(url.path)"
                 }
@@ -64,23 +64,23 @@ struct loadingView: View, DropDelegate {
     }
 }
 
-private func loadingViewMessage(_ data: Data) -> AnyView {
-    switch data.status {
+private func loadingViewMessage(_ fileHandler: FileHandler) -> AnyView {
+    switch fileHandler.status {
         case .waiting:
-            return AnyView(waitingView().environmentObject(data))
+            return AnyView(waitingView())
         case .loading_file:
             return AnyView(openingView())
         case .loading_dates:
-            return AnyView(VLoadingView().environmentObject(data))
+            return AnyView(VLoadingView())
         case .loading_logs:
-            return AnyView(VLoadingView().environmentObject(data))
+            return AnyView(VLoadingView())
         default:
             return AnyView(Text("An invalid status was passed to loadingView"))
     }
 }
 
 private struct waitingView: View {
-    @EnvironmentObject var data: Data
+    @EnvironmentObject var fileHandler: FileHandler
     
     var body: some View {
             HStack {
@@ -105,7 +105,7 @@ private struct waitingView: View {
                         }
                             
                         if(path != nil) {
-                            self.data.loadFile(filePath: path!)
+                            self.fileHandler.loadFile(filePath: path!)
                         }
                     }
                 })
@@ -130,28 +130,28 @@ private struct openingView: View {
 }
 
 private struct VLoadingView: View {
-    @EnvironmentObject var data: Data
+    @EnvironmentObject var fileHandler: FileHandler
     
     var body: some View {
         VStack {
-            Text("\(data.status.toString(data: data))")
-            if(data.status == .loading_dates) {
-                Text("%" + String(format: "%.2f", data.percentDatesLoaded) + " | dates: \(data.numDatesLoaded)")
-            } else if (data.status == .loading_logs) {
-                Text("%" + String(format: "%.2f", data.percentLogsLoaded) + " | logs: \(data.numLogsLoaded)")
+            Text("\(fileHandler.status.toString(fileHandler: fileHandler))")
+            if(fileHandler.status == .loading_dates) {
+                Text("%" + String(format: "%.2f", fileHandler.percentDatesLoaded) + " | dates: \(fileHandler.numDatesLoaded)")
+            } else if (fileHandler.status == .loading_logs) {
+                Text("%" + String(format: "%.2f", fileHandler.percentLogsLoaded) + " | logs: \(fileHandler.numLogsLoaded)")
             }
         }
     }
 }
 
 public struct HLoadingView: View {
-    @EnvironmentObject var data: Data
+    @EnvironmentObject var fileHandler: FileHandler
     
     public var body: some View {
         HStack {
-            if(self.data.status == .reloading) {
-                Text("\(data.status.toString(data: data))")
-                Text("%" + String(format: "%.2f", data.percentLogsLoaded) + " | logs: \(data.numLogsLoaded)")
+            if(self.fileHandler.status == .reloading) {
+                Text("\(fileHandler.status.toString(fileHandler: fileHandler))")
+                Text("%" + String(format: "%.2f", fileHandler.percentLogsLoaded) + " | logs: \(fileHandler.numLogsLoaded)")
             } else {
                 EmptyView()
             }

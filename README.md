@@ -20,5 +20,4 @@ Features:
 
 bugs:
 > - (somewhat fixed) open in terminal doesn't make Terminal the front window or maximize it 
-> - details occasionally resize when other details are opened
-> - long traces truncate the bottom of the trace in the GUI
+> - (maybe resolved) details occasionally resize when other details are opened

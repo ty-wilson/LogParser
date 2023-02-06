@@ -9,14 +9,13 @@
 import Cocoa
 import SwiftUI
 
+@available(macOS 11.0, *)
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     var window: NSWindow!
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        
-        let data = Data()
 
         // Create the window
         window = NSWindow(
@@ -27,7 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         
         // Create the SwiftUI view that provides the window contents.
-        let contentView = ContentView(window: window).environmentObject(data)
+        let contentView = ContentView(window: window)
         
         window.contentView = NSHostingView(rootView: contentView)
         window.center()
