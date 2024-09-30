@@ -9,17 +9,17 @@
 import SwiftUI
 
 struct datePickerView: View {
-    @EnvironmentObject var fileHandler: FileHandler
+    @EnvironmentObject var dataHelper: DataHelper
     @State var numberDaysToLoad: Int
     
     var limitingDate: Date {
         return Date(timeIntervalSinceNow: Double(-1 * numberDaysToLoad) * TimeInterval(SECONDS_PER_DAY))
     }
     var maximumNumberOfDaysAgo: Int {
-        return Int(fileHandler.parsedDates.getFirst().d.distance(to: Date())) / SECONDS_PER_DAY
+        return Int(dataHelper.parsedDates.getFirst().d.distance(to: Date())) / SECONDS_PER_DAY
     }
     var minimumNumberOfDaysAgo: Int {
-        return Int(fileHandler.parsedDates.getLast().d.distance(to: Date())) / SECONDS_PER_DAY
+        return Int(dataHelper.parsedDates.getLast().d.distance(to: Date())) / SECONDS_PER_DAY
     }
     
     var body: some View {
@@ -29,7 +29,7 @@ struct datePickerView: View {
                 ForEach(minimumNumberOfDaysAgo...maximumNumberOfDaysAgo) {
                     //Highlight the currently filtered date
                     if (convertToShortDate(self.getDateFromToday(minus: $0)).d
-                        .compare(self.fileHandler.startingDate.d) == .orderedSame) {
+                        .compare(self.dataHelper.startingDate.d) == .orderedSame) {
                         Text(self.generatePickerTextFor(numDaysToSearch: $0))
                             .foregroundColor(Color.uiGreen)
                     } else {
@@ -38,12 +38,12 @@ struct datePickerView: View {
                 }
             }
             .fixedSize()
-            .disabled(fileHandler.status != .loaded)
+            .disabled(dataHelper.status != .loaded)
             .onReceive([self.numberDaysToLoad].publisher.first()) { (value) in
                 if (convertToShortDate(self.getDateFromToday(minus: self.numberDaysToLoad)).d
-                    .compare(self.fileHandler.startingDate.d) != .orderedSame) {
-                    self.fileHandler.startingDate = convertToShortDate(self.limitingDate)
-                    self.fileHandler.loadLogs()
+                    .compare(self.dataHelper.startingDate.d) != .orderedSame) {
+                    self.dataHelper.startingDate = convertToShortDate(self.limitingDate)
+                    self.dataHelper.loadLogs()
                 }
             }
         }
@@ -54,12 +54,12 @@ struct datePickerView: View {
     func generatePickerTextFor(numDaysToSearch: Int) -> String {
         var text = String()
         if (numDaysToSearch == 0) {
-            text.append("Today: " + dateToString(Date()) + " | " + FileHandler.getFormattedNumber(self.fileHandler.parsedDates.occurancesAt(Date())) + " logs")
+            text.append("Today: " + dateToString(Date()) + " | " + DataHelper.getFormattedNumber(self.dataHelper.parsedDates.occurancesAt(Date())) + " logs")
         } else {
             //Date
             text.append(dateToString(getDateFromToday(minus: numDaysToSearch)) + ": ")
             //Logs
-            text.append(FileHandler.getFormattedNumber(self.fileHandler.parsedDates.occurancesAfterAndIncluding(getDateFromToday(minus: numDaysToSearch))) + " logs")
+            text.append(DataHelper.getFormattedNumber(self.dataHelper.parsedDates.occurancesAfterAndIncluding(getDateFromToday(minus: numDaysToSearch))) + " logs")
         }
         
         return text

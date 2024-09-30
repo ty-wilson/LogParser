@@ -8,7 +8,6 @@
 
 import Foundation
 
-//struct Log: Hashable, Identifiable {
 class Log: ObservableObject, Identifiable {
     
     init(lineNum: [Int],
@@ -45,10 +44,6 @@ class Log: ObservableObject, Identifiable {
         return dateAtLine[dateAtLine.keys.first!]!
     }
     
-//    mutating func toggleDetails() {
-//        showDetails = !showDetails
-//    }
-    
     func toggleDetails() {
         showDetails = !showDetails
     }
@@ -61,4 +56,12 @@ class Log: ObservableObject, Identifiable {
     let text: String
     var traceAtLine: Dictionary<Int, String>
     @Published var showDetails: Bool
+}
+
+class LogShell {
+    public var date: Date?
+    public var title: String = ""
+    public var thread: String = ""
+    public var process: String = ""
+    public var text: String = ""
 }

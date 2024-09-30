@@ -11,7 +11,7 @@ import SwiftUI
 @available(macOS 11.0, *)
 struct LogListView: View {
     @EnvironmentObject var filter: Filter
-    @EnvironmentObject var fileHandler: FileHandler
+    @EnvironmentObject var dataHelper: DataHelper
     
     var body: some View {
         VStack {
@@ -21,7 +21,7 @@ struct LogListView: View {
                 //Scroll View of Line Views
                 ScrollView {
                     VStack(alignment: .leading) {
-                        ForEach(fileHandler.getFilteredLogs(filter: filter)) { log in
+                        ForEach(dataHelper.getFilteredLogs(filter: filter)) { log in
                             LogView(log: log,
                                      detailsMinHeight: CGFloat(50 + min(log.lineNum.count, 35) * 25))
                             Divider()
@@ -44,6 +44,6 @@ struct LogView_Previews: PreviewProvider {
     static var previews: some View {
         LogListView()
             .environmentObject(Filter())
-            .environmentObject(FileHandler())
+            .environmentObject(DataHelper())
     }
 }

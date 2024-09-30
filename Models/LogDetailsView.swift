@@ -8,23 +8,26 @@
 
 import SwiftUI
 
+@available(macOS 11.0, *)
 struct LogDetailsView: View {
     @ObservedObject var log: Log
     @EnvironmentObject var filter: Filter
-    
-    @State var selectedLineNum: Int?
+    @EnvironmentObject var dataHelper: DataHelper
+    @State var selectedLineNum: Int? = nil
+    @State var filteredLines = [Int]()
     
     var body: some View {
         HStack {
             //Line | Date | Thread selectable list
             VStack(alignment: .leading) {
-                List (log.lineNum, selection: $selectedLineNum) { num in
+                List (dataHelper.getFilteredLines(log: log, filter: filter), selection: $selectedLineNum) { num in
                     HStack {
                         //Add line, date and thread
                         
                         Text("line \(num):")
                             .foregroundColor(.secondary)
-                        StyledText(verbatim: "\(FileHandler.dateToLongTextFormatter.string(from: self.log.dateAtLine[num]!!))")
+                        
+                        StyledText(verbatim: "\(DataHelper.dateToLongTextFormatter.string(from: self.log.dateAtLine[num]!!))")
                             .style(.highlight(), ranges: { filter.includeTrace ? (filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)) : [] })
                             .foregroundColor(Color.uiBlue)
 
@@ -39,7 +42,7 @@ struct LogDetailsView: View {
             //Text: Combine text with other text
             if(selectedLineNum != nil) {
                 LogTraceView(log: log,
-                             selectedLineNum: $selectedLineNum)
+                             selectedLineNum: .constant(selectedLineNum!))
                     .padding(.leading, 10)
                     .frame(idealWidth: 900)//more magic
             } else {
@@ -53,10 +56,14 @@ struct LogDetailsView: View {
                 }
                 .frame(idealWidth: 900)
             }
+        }.onAppear(){
+            filteredLines = dataHelper.getFilteredLines(log: log, filter: filter)
+            selectedLineNum = filteredLines.count > 0 ? filteredLines[0] : -1
         }
     }
 }
 
+@available(macOS 11.0, *)
 struct LogDetailsView_Previews: PreviewProvider {
     static var previews: some View {
         LogDetailsView(log: Log(lineNum: [1, 2],

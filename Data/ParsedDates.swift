@@ -8,12 +8,8 @@
 
 import Foundation
 
-//Startup data
 struct ParsedDates {
-//    public var shortDatesList: [EquatableDate] //expects only short dates from convertToShortDate or textToShortDateFormatter
-//    public var occurancesList: [Int]
-//    public var firstIndexList: [Int]
-    public var dateToOccurancesAndIndex: Dictionary<EquatableDate, OccurancesAndIndex>
+    public var dateToOccurancesAndIndex: Dictionary<DateWrapper, OccurancesAndIndex>
     
     init() {
         dateToOccurancesAndIndex = Dictionary()
@@ -28,23 +24,23 @@ struct ParsedDates {
         return dateToOccurancesAndIndex.count
     }
     
-    func contains(_ date: EquatableDate) -> Bool {
+    func contains(_ date: DateWrapper) -> Bool {
         return dateToOccurancesAndIndex[date] != nil
     }
     
-    mutating func add(_ date: EquatableDate, occurances: Int, firstIndex: Int) {
-        dateToOccurancesAndIndex[date] = OccurancesAndIndex(occurances: occurances, firstIndex: firstIndex)
+    mutating func addNewDate(_ date: DateWrapper, firstIndex: Int) {
+        dateToOccurancesAndIndex[date] = OccurancesAndIndex(occurances: 1, firstIndex: firstIndex)
     }
     
-    mutating func addOccurance(_ date: EquatableDate) {
+    mutating func addOccurance(_ date: DateWrapper) {
         dateToOccurancesAndIndex[date]?.occurances += 1
     }
     
-    func getLast() -> EquatableDate {
+    func getLast() -> DateWrapper {
         return dateToOccurancesAndIndex.keys.sorted(by: <).last!
     }
     
-    func getFirst() -> EquatableDate {
+    func getFirst() -> DateWrapper {
         return dateToOccurancesAndIndex.keys.sorted(by: <).first!
     }
     
@@ -73,7 +69,7 @@ struct ParsedDates {
         return total
     }
     
-    func getClosestIndexToDate(_ startingDate: EquatableDate) -> Int {
+    func getClosestIndexToDate(_ startingDate: DateWrapper) -> Int {
         var index = 0
         
         //Check if dates in the datesData are after the date and add the occurances from that date to the total
@@ -88,8 +84,8 @@ struct ParsedDates {
     }
 }
 
-func convertToShortDate(_ date: Date) -> EquatableDate {
+func convertToShortDate(_ date: Date) -> DateWrapper {
     let extraTime = Int(date.timeIntervalSince1970) % SECONDS_PER_DAY
     let newDate = Date(timeIntervalSince1970: TimeInterval(Int(date.timeIntervalSince1970) - extraTime))
-    return EquatableDate(d: newDate)
+    return DateWrapper(d: newDate)
 }

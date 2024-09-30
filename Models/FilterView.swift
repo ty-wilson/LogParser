@@ -11,7 +11,7 @@ import SwiftUI
 @available(macOS 11.0, *)
 struct FilterView: View {
     @EnvironmentObject var filter: Filter
-    @EnvironmentObject var fileHandler: FileHandler
+    @EnvironmentObject var dataHelper: DataHelper
     @State var showSettings = false
     
     var body: some View {
@@ -19,6 +19,7 @@ struct FilterView: View {
         HStack {
             //Filters
             TextField("🔎 Search", text: $filter.searchText)
+                .textFieldStyle(.squareBorder)
             
             //Search settings
             if(showSettings) {
@@ -26,11 +27,11 @@ struct FilterView: View {
                 Toggle("Search traces", isOn: $filter.includeTrace)
                 Toggle("Ignore case", isOn: $filter.ignoreCase)
                 Toggle("ERROR", isOn: $filter.showErrors)
-                    .foregroundColor(colorTitle(title: FileHandler.stringToTitle("ERROR")))
+                    .foregroundColor(colorTitle(title: DataHelper.stringToTitle("ERROR")))
                 Toggle("WARN", isOn: $filter.showWarns)
-                    .foregroundColor(colorTitle(title: FileHandler.stringToTitle("WARN")))
+                    .foregroundColor(colorTitle(title: DataHelper.stringToTitle("WARN")))
 
-                datePickerView(numberDaysToLoad: Int(fileHandler.startingDate.d.distance(to: Date())) / SECONDS_PER_DAY)
+                datePickerView(numberDaysToLoad: Int(dataHelper.startingDate.d.distance(to: Date())) / SECONDS_PER_DAY)
             }
             
             Button(action: {
@@ -52,7 +53,7 @@ struct FilterView: View {
             })
             
                 
-            Text(String(fileHandler.getNumFilteredLogs(filter: filter)) + " logs")
+            Text(String(dataHelper.getNumFilteredLogs(filter: filter)) + " logs")
             .foregroundColor(.white)
             .bold()
         }
@@ -64,6 +65,6 @@ struct FilterView_Previews: PreviewProvider {
     static var previews: some View {
         FilterView()
             .environmentObject(Filter())
-            .environmentObject(FileHandler())
+            .environmentObject(DataHelper())
     }
 }

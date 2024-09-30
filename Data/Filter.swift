@@ -8,7 +8,6 @@
 
 import Foundation
 
-//Determines what logs to return
 class Filter: ObservableObject {
     @Published var showErrors = true
     @Published var showWarns = true

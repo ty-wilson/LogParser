@@ -10,7 +10,6 @@ import SwiftUI
 
 @available(macOS 11.0, *)
 struct LogView: View {
-    
     static let DETAIL_LINE_SIZE = 25 //Display size per detail log line
     static let MIN_DETAIL_LINES = 4 //Min number of lines printed under details
         
@@ -31,23 +30,10 @@ struct LogView: View {
     var body: some View {
         VStack {
             //Basic View
-            HStack(alignment: .center) {
-                HStack {
-                    Text(String(log.lineNum.count) + "x")
-                        .foregroundColor(Color.secondary)
-                    
-                    Text(verbatim: log.title.rawValue).foregroundColor(colorTitle(title: log.title))
-                    StyledText(verbatim: log.process)
-                        .style(.highlight(), ranges: {
-                            filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)
-                        })
-                        .foregroundColor(Color.uiGreen)
-                    StyledText(verbatim: log.text)
-                        .style(.highlight(), ranges: {
-                            filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)
-                        })
-                        .foregroundColor(Color.uiWhite)
-                }.onHover(perform: {val in
+            LogBasicView(log: log)
+                .padding(.trailing, 5)
+                .opacity(opacity)
+                .onHover(perform: {val in
                     if(val){
                         NSCursor.pointingHand.set()
                     } else {
@@ -55,34 +41,12 @@ struct LogView: View {
                     }
                 })
                 .onTapGesture {
-                        self.log.showDetails = !self.log.showDetails
+                    self.log.showDetails = !self.log.showDetails
                 }
-                
-                Spacer()
-                
-                StyledText(verbatim: FileHandler.dateRangeText(log))
-                    .style(.highlight(), ranges: {
-                            filter.ignoreCase ? $0.lowercased().ranges(of: filter.searchText.lowercased()) : $0.ranges(of: filter.searchText)
-                        })
-                    .foregroundColor(.uiBlue)
-                    .onHover(perform: {val in
-                        if(val){
-                            NSCursor.pointingHand.set()
-                        } else {
-                            NSCursor.arrow.set()
-                        }
-                    })
-                    .onTapGesture {
-                        self.log.showDetails = !self.log.showDetails
-                }
-            }
-            .padding(.trailing, 5)
-            .opacity(opacity)
             
             //Detailed View
             if(self.log.showDetails) {
-                LogDetailsView(log: log,
-                               selectedLineNum: log.lineNum[0])
+                LogDetailsView(log: log)
                     .frame(minHeight: detailsMinHeight)
                     .fixedSize(horizontal: false, vertical: true)//magic
             }
@@ -147,6 +111,6 @@ struct LineView_Previews: PreviewProvider {
                     showDetails: true),
                  detailsMinHeight: 100)
         .environmentObject(Filter())
-        .environmentObject(FileHandler())
+        .environmentObject(DataHelper())
     }
 }

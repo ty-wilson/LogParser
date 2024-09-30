@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct LoadingView: View, DropDelegate {
-    @EnvironmentObject var fileHandler: FileHandler
+    @EnvironmentObject var dataHelper: DataHelper
     @State private var date = Date()
     
     let window: NSWindow
@@ -29,15 +29,8 @@ struct LoadingView: View, DropDelegate {
             
             Spacer()
             
-            loadingViewMessage(fileHandler)
+            loadingViewMessage(dataHelper)
                 .frame(width: 400, height: 50)
-            
-            /*DatePicker(
-                    "Start Date",
-                    selection: $date,
-                    displayedComponents: [.date]
-            )
-            .datePickerStyle(GraphicalDatePickerStyle())*/
             
             Spacer()
         }.onDrop(of: [(kUTTypeFileURL as String)], delegate: self)
@@ -52,8 +45,8 @@ struct LoadingView: View, DropDelegate {
         itemProvider.loadItem(forTypeIdentifier: (kUTTypeFileURL as String), options: nil) {item, error in
             guard let thisData = item as? Foundation.Data, let url = URL(dataRepresentation: thisData, relativeTo: nil) else { return }
                    
-            if(self.fileHandler.status == .waiting) {
-                self.fileHandler.loadFile(filePath: url.path)
+            if(self.dataHelper.status == .waiting) {
+                self.dataHelper.loadFile(url: url)
                 UI {
                     window.title = "\(url.path)"
                 }
@@ -64,8 +57,8 @@ struct LoadingView: View, DropDelegate {
     }
 }
 
-private func loadingViewMessage(_ fileHandler: FileHandler) -> AnyView {
-    switch fileHandler.status {
+private func loadingViewMessage(_ dataHelper: DataHelper) -> AnyView {
+    switch dataHelper.status {
         case .waiting:
             return AnyView(waitingView())
         case .loading_file:
@@ -80,7 +73,7 @@ private func loadingViewMessage(_ fileHandler: FileHandler) -> AnyView {
 }
 
 private struct waitingView: View {
-    @EnvironmentObject var fileHandler: FileHandler
+    @EnvironmentObject var dataHelper: DataHelper
     
     var body: some View {
             HStack {
@@ -88,9 +81,10 @@ private struct waitingView: View {
                     .foregroundColor(.secondary)
                 Button("Select File...", action: {
                     UI {
-                        let path: String?
+                        let url: URL?
                         
                         let openPanel = NSOpenPanel()
+                        openPanel.center()
                         openPanel.makeKeyAndOrderFront(nil)
                         openPanel.level = .modalPanel
                         
@@ -98,14 +92,14 @@ private struct waitingView: View {
                         
                         if ( response == NSApplication.ModalResponse.OK )
                         {
-                            path = openPanel.url!.path
+                            url = openPanel.url
                         }
                         else {
-                            path = nil
+                            url = nil
                         }
                             
-                        if(path != nil) {
-                            self.fileHandler.loadFile(filePath: path!)
+                        if(url != nil) {
+                            self.dataHelper.loadFile(url: url!)
                         }
                     }
                 })
@@ -130,28 +124,29 @@ private struct openingView: View {
 }
 
 private struct VLoadingView: View {
-    @EnvironmentObject var fileHandler: FileHandler
+    @EnvironmentObject var dataHelper: DataHelper
     
     var body: some View {
         VStack {
-            Text("\(fileHandler.status.toString(fileHandler: fileHandler))")
-            if(fileHandler.status == .loading_dates) {
-                Text("%" + String(format: "%.2f", fileHandler.percentDatesLoaded) + " | dates: \(fileHandler.numDatesLoaded)")
-            } else if (fileHandler.status == .loading_logs) {
-                Text("%" + String(format: "%.2f", fileHandler.percentLogsLoaded) + " | logs: \(fileHandler.numLogsLoaded)")
+            Text("\(dataHelper.status.toString(dataHelper: dataHelper))")
+            if(dataHelper.status == .loading_dates) {
+                Text("File: \(dataHelper.getFilePath())")
+                Text("%" + String(format: "%.2f", dataHelper.percentDatesLoaded) + " | dates: \(dataHelper.numDatesLoaded)")
+            } else if (dataHelper.status == .loading_logs) {
+                Text("%" + String(format: "%.2f", dataHelper.percentLogsLoaded) + " | logs: \(dataHelper.numLogsLoaded)")
             }
         }
     }
 }
 
 public struct HLoadingView: View {
-    @EnvironmentObject var fileHandler: FileHandler
+    @EnvironmentObject var dataHelper: DataHelper
     
     public var body: some View {
         HStack {
-            if(self.fileHandler.status == .reloading) {
-                Text("\(fileHandler.status.toString(fileHandler: fileHandler))")
-                Text("%" + String(format: "%.2f", fileHandler.percentLogsLoaded) + " | logs: \(fileHandler.numLogsLoaded)")
+            if(self.dataHelper.status == .reloading) {
+                Text("\(dataHelper.status.toString(dataHelper: dataHelper))")
+                Text("%" + String(format: "%.2f", dataHelper.percentLogsLoaded) + " | logs: \(dataHelper.numLogsLoaded)")
             } else {
                 EmptyView()
             }

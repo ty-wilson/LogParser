@@ -24,7 +24,7 @@ extension Color {
 
 @available(macOS 11.0, *)
 struct ContentView: View {
-    @StateObject var fileHandler = FileHandler()
+    @StateObject var dataHelper = DataHelper()
     @StateObject var filter = Filter()
     
     let window: NSWindow
@@ -32,7 +32,7 @@ struct ContentView: View {
     var body: some View {
         
         VStack {
-            if(fileHandler.status != .loaded && fileHandler.status != .reloading) {
+            if(dataHelper.status != .loaded && dataHelper.status != .reloading) {
                 LoadingView(window: window)
             } else {
                 FilterView()
@@ -55,7 +55,7 @@ struct ContentView: View {
             print("ContentView loaded")
         }
         .environmentObject(filter)
-        .environmentObject(fileHandler)
+        .environmentObject(dataHelper)
     }
 }
 
@@ -63,6 +63,6 @@ struct ContentView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView(window: NSWindow())
-            .environmentObject(FileHandler())
+            .environmentObject(DataHelper())
     }
 }

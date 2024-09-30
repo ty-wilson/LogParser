@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		232590DC2990C879004AA461 /* DateWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232590DB2990C879004AA461 /* DateWrapper.swift */; };
+		232BD7AF29915DFA00656D98 /* Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232BD7AE29915DFA00656D98 /* Status.swift */; };
+		232BD7B12991A6F500656D98 /* FullLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232BD7B02991A6F500656D98 /* FullLogView.swift */; };
+		2339C35229C3CD56001A3F7D /* LogBasicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2339C35129C3CD56001A3F7D /* LogBasicView.swift */; };
 		234267472453E9130028F9B1 /* DatePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 234267462453E9130028F9B1 /* DatePickerView.swift */; };
 		234AF088244667A6007C67D6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23D31F1A2422ECF800BE5126 /* Assets.xcassets */; };
 		234AF5E22422EE270065A7AA /* Main.storyboard in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F282422ED1100BE5126 /* Main.storyboard */; };
@@ -18,7 +22,7 @@
 		2366187829907C81001FBFC5 /* ParsedDates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2366187729907C81001FBFC5 /* ParsedDates.swift */; };
 		236F13AA2442973600D40573 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236F13A92442973600D40573 /* LoadingView.swift */; };
 		23D31F202422ECF900BE5126 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F182422ECF800BE5126 /* AppDelegate.swift */; };
-		23D31F242422ECF900BE5126 /* FileHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F1C2422ECF800BE5126 /* FileHandler.swift */; };
+		23D31F242422ECF900BE5126 /* DataHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F1C2422ECF800BE5126 /* DataHelper.swift */; };
 		23D31F252422ECF900BE5126 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F1D2422ECF800BE5126 /* ContentView.swift */; };
 		23D31F312422ED7700BE5126 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D31F302422ED7700BE5126 /* File.swift */; };
 		23E7B272245A05FA0037547A /* TextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E7B271245A05FA0037547A /* TextStyle.swift */; };
@@ -27,7 +31,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		232590DB2990C879004AA461 /* DateWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateWrapper.swift; sourceTree = "<group>"; };
+		232BD7AE29915DFA00656D98 /* Status.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Status.swift; sourceTree = "<group>"; };
+		232BD7B02991A6F500656D98 /* FullLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullLogView.swift; sourceTree = "<group>"; };
 		2330AFC224131DF9008374DA /* Log Parser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Log Parser.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2339C35129C3CD56001A3F7D /* LogBasicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogBasicView.swift; sourceTree = "<group>"; };
 		234267462453E9130028F9B1 /* DatePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatePickerView.swift; sourceTree = "<group>"; };
 		234AF5E72422EECA0065A7AA /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
 		234AF5E82422EECA0065A7AA /* LogListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogListView.swift; sourceTree = "<group>"; };
@@ -39,7 +47,7 @@
 		23D31F182422ECF800BE5126 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		23D31F1A2422ECF800BE5126 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23D31F1B2422ECF800BE5126 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		23D31F1C2422ECF800BE5126 /* FileHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileHandler.swift; sourceTree = "<group>"; };
+		23D31F1C2422ECF800BE5126 /* DataHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataHelper.swift; sourceTree = "<group>"; };
 		23D31F1D2422ECF800BE5126 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		23D31F1E2422ECF800BE5126 /* LogParser.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LogParser.entitlements; sourceTree = "<group>"; };
 		23D31F1F2422ECF800BE5126 /* Preview Content */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preview Content"; sourceTree = "<group>"; };
@@ -96,6 +104,8 @@
 				23FC1439298D4F50006E651C /* FilterView.swift */,
 				2366187329907404001FBFC5 /* LogDetailsView.swift */,
 				236618752990793D001FBFC5 /* LogTraceView.swift */,
+				232BD7B02991A6F500656D98 /* FullLogView.swift */,
+				2339C35129C3CD56001A3F7D /* LogBasicView.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -104,10 +114,12 @@
 			isa = PBXGroup;
 			children = (
 				23D31F302422ED7700BE5126 /* File.swift */,
-				23D31F1C2422ECF800BE5126 /* FileHandler.swift */,
+				23D31F1C2422ECF800BE5126 /* DataHelper.swift */,
 				23FC143C298D4FD9006E651C /* Filter.swift */,
 				2366186F29903491001FBFC5 /* Log.swift */,
 				2366187729907C81001FBFC5 /* ParsedDates.swift */,
+				232590DB2990C879004AA461 /* DateWrapper.swift */,
+				232BD7AE29915DFA00656D98 /* Status.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -186,7 +198,10 @@
 				2366187029903491001FBFC5 /* Log.swift in Sources */,
 				23E7B272245A05FA0037547A /* TextStyle.swift in Sources */,
 				234AF5E92422EECA0065A7AA /* LogView.swift in Sources */,
+				232BD7AF29915DFA00656D98 /* Status.swift in Sources */,
 				234AF5EA2422EECA0065A7AA /* LogListView.swift in Sources */,
+				232590DC2990C879004AA461 /* DateWrapper.swift in Sources */,
+				2339C35229C3CD56001A3F7D /* LogBasicView.swift in Sources */,
 				2366187429907404001FBFC5 /* LogDetailsView.swift in Sources */,
 				236618762990793D001FBFC5 /* LogTraceView.swift in Sources */,
 				234AF5E22422EE270065A7AA /* Main.storyboard in Sources */,
@@ -194,8 +209,9 @@
 				2366187829907C81001FBFC5 /* ParsedDates.swift in Sources */,
 				23D31F312422ED7700BE5126 /* File.swift in Sources */,
 				23D31F202422ECF900BE5126 /* AppDelegate.swift in Sources */,
+				232BD7B12991A6F500656D98 /* FullLogView.swift in Sources */,
 				236F13AA2442973600D40573 /* LoadingView.swift in Sources */,
-				23D31F242422ECF900BE5126 /* FileHandler.swift in Sources */,
+				23D31F242422ECF900BE5126 /* DataHelper.swift in Sources */,
 				23D31F252422ECF900BE5126 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
