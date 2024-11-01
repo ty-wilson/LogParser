@@ -36,6 +36,10 @@ final class DataHelper: ObservableObject {
     
     private let shortDatePattern = "\\d{4}-\\d{2}-\\d{2}"
     private let longDatePattern = "\\d{4}-\\d{2}-\\d{2}[T\\s]\\d{2}:\\d{2}:\\d{2},\\d{3}"
+    private let longDateFormats = [
+        "yyyy-MM-dd'T'HH:mm:ss.SSS",
+        "yyyy-MM-dd HH:mm:ss.SSS"
+    ]
     
     init() {
         //print("Initializing Data Helper")
@@ -46,7 +50,6 @@ final class DataHelper: ObservableObject {
         
         textToLongDateFormatter = DateFormatter()
         textToLongDateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        textToLongDateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss,SSS"
         textToLongDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         DataHelper.dateToShortTextFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -391,7 +394,7 @@ final class DataHelper: ObservableObject {
             if let match = regex.firstMatch(in: text, options: [], range: range) {
                 // Extract the matched substring
                 if let dateRange = Range(match.range, in: text) {
-                    foundDate = String(text[dateRange])
+                    foundDate = String(text[dateRange]).replacingOccurrences(of: ",", with: ".")
                 }
             } else {
                 print("No date found")
@@ -436,7 +439,17 @@ final class DataHelper: ObservableObject {
             //Restart loading at an earlier date, if no logs were found
             //this should not loop infinitely since loadDates ensures one date exists
             if(untilFound && newLogArray.count == 0) {
-                self.startingDate = DateWrapper(d: self.startingDate.d.advanced(by: TimeInterval(-1 * SECONDS_PER_DAY)))
+                repeat {
+                    self.startingDate = DateWrapper(d: self.startingDate.d.advanced(by: TimeInterval(-1 * SECONDS_PER_DAY)))
+                    // If the new mostRecentLogDate is before the oldest parsed date (and there are still no logs found) throw an error
+                    if(self.startingDate.d.compare(self.parsedDates.getFirst().d) == .orderedAscending) {
+                        DataHelper.alertMessage("Unrecognized file contents:\n\(self.file!.getPath())")
+                        UI {
+                            self.status = .waiting
+                        }
+                        return
+                     }
+                } while (!self.parsedDates.contains(self.startingDate))
                 self.loadLogs(true)
             }
             else {
@@ -470,7 +483,13 @@ final class DataHelper: ObservableObject {
             //date
             let dateText = self.findDate(in: self.file!.lines[fileIndex], withPattern: self.longDatePattern)
             if (dateText != nil) {
-                logShell.date = self.textToLongDateFormatter.date(from: dateText!)
+                for format in longDateFormats {
+                    textToLongDateFormatter.dateFormat = format
+                    if let parsedDate = textToLongDateFormatter.date(from: dateText!) {
+                        logShell.date = parsedDate
+                        break
+                    }
+                }
             }
             
             var lineIndex: String.Index? = self.file!.lines[fileIndex].startIndex
